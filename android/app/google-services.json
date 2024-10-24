@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "528301389248",
+    "project_id": "ai-study-planner-f5d65",
+    "storage_bucket": "ai-study-planner-f5d65.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528301389248:android:b773c28c76d07f804d0425",
+        "android_client_info": {
+          "package_name": "com.example.ai_study_planner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBw4BBg5U1dCz7BWTcCwOWvVEiGXRWyaUM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
