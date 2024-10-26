@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 // Ensure you have this model
 import 'package:study_planner/pages/home_page.dart';
 import 'package:study_planner/pages/login_page.dart';
-import 'package:study_planner/services/pigeon_user_details.dart'; // Ensure you have the LoginPage
+import 'package:study_planner/models/user_model.dart'; // Ensure you have the LoginPage
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,11 +32,8 @@ class MyApp extends StatelessWidget {
             if (user != null) {
               // If user is logged in, show HomePage
               return HomePage(
-                userDetails: PigeonUserDetails(
-                  uid: user.uid,
-                  email: user.email,
-                ), // Pass user details
-              );
+                  // uid: user.uid, // Pass user details
+                  );
             } else {
               // If user is not logged in, show LoginPage
               return const LoginPage();

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:study_planner/services/auth_service.dart';
+// import 'package:study_planner/services/auth_service.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -10,7 +10,7 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
-  final AuthService _authService = AuthService();
+  // final AuthService _authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +40,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   void _resetPassword() async {
     try {
-      await _authService.resetPassword(_emailController.text.trim());
+      // await _authService.resetPassword(_emailController.text.trim());
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Password reset email sent!')),
       );
@@ -53,6 +53,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 }
 
-extension on AuthService {
-  resetPassword(String trim) {}
-}
+// extension on AuthService {
+//   resetPassword(String trim) {}
+// }

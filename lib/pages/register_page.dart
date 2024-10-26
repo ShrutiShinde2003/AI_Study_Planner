@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:study_planner/services/auth_service.dart';
+import 'package:study_planner/models/user_model.dart';
+// import 'package:study_planner/services/auth_service.dart';
 import 'package:study_planner/pages/home_page.dart';
-import 'package:study_planner/services/pigeon_user_details.dart'; // Import PigeonUserDetails
+import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:study_planner/services/pigeon_user_details.dart'; // Import PigeonUserDetails
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -11,9 +13,11 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  // final AuthService _authService = AuthService();
+
+  final auth = FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -47,28 +51,104 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  void _register() async {
-    try {
-      // Attempt to register the user
-      PigeonUserDetails? userDetails = await _authService.register(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+  // Future<void> _register() async {
+  //   try {
+  //     // Attempt to register the user
+  //     await auth
+  //         .createUserWithEmailAndPassword(
+  //       email: _emailController.text.trim(),
+  //       password: _passwordController.text.trim(),
+  //     )
+  //         .then((value) {
+  //       Navigator.pushAndRemoveUntil(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) => HomePage(),
+  //         ),
+  //         (Route<dynamic> route) => false,
+  //       );
+  //     });
 
-      // If the user is registered, navigate to HomePage with userDetails
-      if (userDetails != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                HomePage(userDetails: userDetails), // Pass userDetails here
-          ),
-        );
-      }
+  //     // Add this for showing a toast on success (optional)
+  //     // Fluttertoast.showToast(
+  //     //   msg: 'Registration successful!',
+  //     //   toastLength: Toast.LENGTH_SHORT,
+  //     //   gravity: ToastGravity.BOTTOM,
+  //     //   backgroundColor: Colors.green,
+  //     //   textColor: Colors.white,
+  //     // );
+  //   } catch (e) {
+  //     print('Error: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Registration failed: ${e.toString()}')),
+  //     );
+
+  //     // Uncomment this for showing a toast on failure (optional)
+  //     // Fluttertoast.showToast(
+  //     //   msg: 'Registration failed. Please try again.',
+  //     //   toastLength: Toast.LENGTH_SHORT,
+  //     //   gravity: ToastGravity.BOTTOM,
+  //     //   backgroundColor: const Color.fromARGB(255, 240, 91, 91),
+  //     //   textColor: const Color.fromARGB(255, 255, 255, 255),
+  //     // );
+  //   }
+  // }
+
+  Future<void> _register() async {
+    try {
+      print('before auth');
+      await auth
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          )
+          .then((value) => add_user(context));
+
+      // print('after auth');
+
+      // User? firebaseUser = auth.currentUser;
+
+      // if (firebaseUser != null) {
+      //   // Create a UserModel instance from Firebase user details
+      //   UserModel userModel = UserModel(
+      //     uid: firebaseUser.uid,
+      //     userName: firebaseUser.email?.split('@').first ?? 'User',
+      //     email: firebaseUser.email!,
+      //   );
+
+      // print('inside if');
+
+      // Navigate to HomePage and pass userModel
+      // Navigator.pushAndRemoveUntil(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (context) => HomePage(userModel: userModel),
+      //   ),
+      //   (Route<dynamic> route) => false,
+      // );
     } catch (e) {
+      print('Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Registration failed: ${e.toString()}')),
       );
     }
+  }
+
+  add_user(context) {
+    // add logic
+
+    UserModel userModel = UserModel(
+      uid: 'asdfghj',
+      userName: "dfgh",
+      email: "tftgy",
+    );
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HomePage(userModel: userModel),
+      ),
+      (Route<dynamic> route) => false,
+    );
   }
 }
