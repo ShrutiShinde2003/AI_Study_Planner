@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:study_planner/services/auth_service.dart';
 import 'package:study_planner/pages/home_page.dart';
+import 'package:study_planner/services/pigeon_user_details.dart'; // Import PigeonUserDetails
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -48,14 +49,20 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _register() async {
     try {
-      final user = await _authService.register(
+      // Attempt to register the user
+      PigeonUserDetails? userDetails = await _authService.register(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      if (user != null) {
+
+      // If the user is registered, navigate to HomePage with userDetails
+      if (userDetails != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomePage()),
+          MaterialPageRoute(
+            builder: (context) =>
+                HomePage(userDetails: userDetails), // Pass userDetails here
+          ),
         );
       }
     } catch (e) {
@@ -65,5 +72,3 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 }
-
-

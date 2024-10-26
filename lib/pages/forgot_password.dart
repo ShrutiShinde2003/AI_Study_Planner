@@ -52,3 +52,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     }
   }
 }
+
+extension on AuthService {
+  resetPassword(String trim) {}
+}
