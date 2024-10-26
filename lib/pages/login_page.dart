@@ -88,18 +88,11 @@ class _LoginPageState extends State<LoginPage> {
       User? firebaseUser = userCredential.user;
 
       if (firebaseUser != null) {
-        // Create a UserModel instance
-        UserModel userModel = UserModel(
-          uid: firebaseUser.uid,
-          userName: firebaseUser.email?.split('@').first ?? 'User',
-          email: firebaseUser.email!,
-        );
-
         // Navigate to HomePage and pass userModel
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => HomePage(userModel: userModel),
+            builder: (context) => HomePage(),
           ),
           (Route<dynamic> route) => false,
         );

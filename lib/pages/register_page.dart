@@ -5,6 +5,8 @@ import 'package:study_planner/pages/home_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:study_planner/services/pigeon_user_details.dart'; // Import PigeonUserDetails
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -14,10 +16,14 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   // final AuthService _authService = AuthService();
 
   final auth = FirebaseAuth.instance;
+
+  CollectionReference collectionReference =
+      FirebaseFirestore.instance.collection('users');
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +36,11 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            TextField(
+              controller: _usernameController,
+              decoration: const InputDecoration(labelText: 'User Name'),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: _emailController,
               decoration: const InputDecoration(labelText: 'Email'),
@@ -134,21 +145,30 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  add_user(context) {
+  add_user(context) async {
     // add logic
 
-    UserModel userModel = UserModel(
-      uid: 'asdfghj',
-      userName: "dfgh",
-      email: "tftgy",
-    );
+    User? user = FirebaseAuth.instance.currentUser;
 
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HomePage(userModel: userModel),
-      ),
-      (Route<dynamic> route) => false,
-    );
+    if (user != null) {
+      UserModel userModel = UserModel(
+        uid: user.uid,
+        userName: _usernameController.text.trim(),
+        email: user.email!,
+      );
+
+      Map<String, dynamic> userMap = userModel.toMap();
+
+      await collectionReference
+          .doc(auth.currentUser?.uid)
+          .set(userMap)
+          .then((value) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+          (Route<dynamic> route) => false,
+        );
+      });
+    }
   }
 }
