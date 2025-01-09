@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:study_planner/pages/todo_list_page.dart';  // Import the ToDo page
 
 class HomePage extends StatelessWidget {
