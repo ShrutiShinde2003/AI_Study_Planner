@@ -1,80 +1,53 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:study_planner/models/user_model.dart';
-import 'package:study_planner/pages/todo_list_page.dart';
-
-FirebaseAuth auth = FirebaseAuth.instance;
-FirebaseFirestore firestore = FirebaseFirestore.instance;
-final userId = auth.currentUser?.uid;
-
-Future<UserModel?> fetchData() async {
-  final userInfoQuery = firestore.collection('users').doc(userId).get();
-
-  try {
-    final userDoc = await userInfoQuery;
-    if (userDoc.exists) {
-      final userData = UserModel.fromDocumentSnapshot(userDoc);
-      return userData;
-    } else {
-      return null;
-    }
-  } catch (error) {
-    print('Error fetching user data: $error');
-    return null;
-  }
-}
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:study_planner/pages/todo_list_page.dart';  // Import the ToDo page
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  const HomePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    User? user = FirebaseAuth.instance.currentUser; // Get the current user
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home Page'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
             onPressed: () async {
+              // Call the sign-out method from AuthService
               await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacementNamed(context, '/login');
+              Navigator.pushReplacementNamed(context, '/');
             },
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
           ),
         ],
       ),
-      body: FutureBuilder<UserModel?>(
-        future: fetchData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(child: Text('User data not found.'));
-          } else {
-            // User data is successfully fetched
-            UserModel userModel = snapshot.data!;
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Welcome, ${userModel.userName}!'),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => TodoListPage()),
-                      );
-                    },
-                    child: const Text('Go to To-Do List'),
-                  ),
-                ],
-              ),
-            );
-          }
-        },
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Use the user object to access displayName and email
+            Text(
+              'Welcome, ${user?.displayName ?? 'User'}\n${user?.email}',
+              style: const TextStyle(fontSize: 18.0),
+            ),
+            const SizedBox(height: 20),
+            // Button to navigate to the To-Do List page
+            ElevatedButton(
+              onPressed: () {
+                // Navigate to the To-Do List page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => TodoListPage()),
+                );
+              },
+              child: const Text('Go to To-Do List'),
+            ),
+          ],
+        ),
       ),
     );
   }

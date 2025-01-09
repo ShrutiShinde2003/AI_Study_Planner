@@ -1,11 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:study_planner/services/pigeon_user_details.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Login with email and password
-  Future<PigeonUserDetails?> login(String email, String password) async {
+  Future<User?> login(String email, String password) async {
     try {
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
@@ -13,11 +12,8 @@ class AuthService {
       );
       User? user = userCredential.user;
 
-      // Convert Firebase User to PigeonUserDetails
-      if (user != null) {
-        return PigeonUserDetails.fromFirebaseUser(user);
-      }
-      return null; // Return null if user is not found
+      // Return the Firebase User if authenticated
+      return user;
     } on FirebaseAuthException catch (e) {
       // Handle Firebase-specific errors
       if (e.code == 'user-not-found') {
@@ -33,7 +29,7 @@ class AuthService {
   }
 
   // Register with email and password
-  Future<PigeonUserDetails?> register(String email, String password) async {
+  Future<User?> register(String email, String password) async {
     try {
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
@@ -42,11 +38,8 @@ class AuthService {
       );
       User? user = userCredential.user;
 
-      // Convert Firebase User to PigeonUserDetails
-      if (user != null) {
-        return PigeonUserDetails.fromFirebaseUser(user);
-      }
-      return null; // Return null if user is not found
+      // Return the Firebase User if registered
+      return user;
     } on FirebaseAuthException catch (e) {
       // Handle Firebase-specific errors
       if (e.code == 'weak-password') {

@@ -1,33 +1,26 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
-class PigeonUserDetails {
+class FirebaseUserDetails {
   final String uid;
   final String? email;
   final String? displayName;
   final String? photoURL;
 
-  PigeonUserDetails({
+  FirebaseUserDetails({
     required this.uid,
     this.email,
     this.displayName,
     this.photoURL,
   });
 
-  // Factory constructor to create a PigeonUserDetails instance from Firebase User
-  factory PigeonUserDetails.fromFirebaseUser(User user) {
-    return PigeonUserDetails(
+  // Factory constructor to create a FirebaseUserDetails instance from Firebase User
+  factory FirebaseUserDetails.fromFirebaseUser(User user) {
+    return FirebaseUserDetails(
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
       photoURL: user.photoURL,
     );
-  }
-
-  // To handle a list of users
-  static List<PigeonUserDetails> fromFirebaseUserList(List<User> users) {
-    return users
-        .map((user) => PigeonUserDetails.fromFirebaseUser(user))
-        .toList();
   }
 
   // To convert into a map if needed (for sending to Firestore/Database)

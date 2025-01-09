@@ -1,31 +1,21 @@
-// lib/pages/todo_list_page.dart
-
 import 'package:flutter/material.dart';
-import 'package:study_planner/models/todo_item.dart';
-import 'package:study_planner/services/firestore_service.dart';
 
 class TodoListPage extends StatefulWidget {
+  const TodoListPage({Key? key}) : super(key: key);
+
   @override
   _TodoListPageState createState() => _TodoListPageState();
 }
 
 class _TodoListPageState extends State<TodoListPage> {
-  final FirestoreService _firestoreService = FirestoreService();
+  final List<Map<String, dynamic>> _todoList = [];
   final TextEditingController _todoController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('To-Do List'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () {
-              // Add your logout logic here
-            },
-          ),
-        ],
+        title: const Text('To-Do List'),
       ),
       body: Column(
         children: [
@@ -36,59 +26,46 @@ class _TodoListPageState extends State<TodoListPage> {
                 Expanded(
                   child: TextField(
                     controller: _todoController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'New To-Do',
                       border: OutlineInputBorder(),
                     ),
                   ),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: _addTodoItem,
-                  child: Text('Add'),
+                  child: const Text('Add'),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: StreamBuilder<List<TodoItem>>(
-              stream: _firestoreService.getTodoList(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No To-Do items'));
-                }
-
-                final todoList = snapshot.data!;
-                return ListView.builder(
-                  itemCount: todoList.length,
-                  itemBuilder: (context, index) {
-                    final todo = todoList[index];
-                    return ListTile(
-                      title: Text(
-                        todo.title,
-                        style: TextStyle(
-                          decoration: todo.isCompleted
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
-                        ),
-                      ),
-                      leading: Checkbox(
-                        value: todo.isCompleted,
-                        onChanged: (value) {
-                          _toggleTodoCompletion(todo, value!);
-                        },
-                      ),
-                      trailing: IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () {
-                          _deleteTodoItem(todo.id);
-                        },
-                      ),
-                    );
-                  },
+            child: ListView.builder(
+              itemCount: _todoList.length,
+              itemBuilder: (context, index) {
+                final todo = _todoList[index];
+                return ListTile(
+                  title: Text(
+                    todo['title'],
+                    style: TextStyle(
+                      decoration: todo['completed']
+                          ? TextDecoration.lineThrough
+                          : TextDecoration.none,
+                    ),
+                  ),
+                  leading: Checkbox(
+                    value: todo['completed'],
+                    onChanged: (value) {
+                      setState(() {
+                        todo['completed'] = value!;
+                      });
+                    },
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () => _removeTodoItem(index),
+                  ),
                 );
               },
             ),
@@ -98,26 +75,21 @@ class _TodoListPageState extends State<TodoListPage> {
     );
   }
 
-  // Method to add a new To-Do item
   void _addTodoItem() {
     if (_todoController.text.isNotEmpty) {
-      final newTodo = TodoItem(
-        id: '', // Firestore will generate the ID
-        title: _todoController.text.trim(),
-      );
-      _firestoreService.addTodoItem(newTodo);
-      _todoController.clear();
+      setState(() {
+        _todoList.add({
+          'title': _todoController.text,
+          'completed': false,
+        });
+        _todoController.clear();
+      });
     }
   }
 
-  // Method to toggle completion status of a To-Do item
-  void _toggleTodoCompletion(TodoItem todo, bool isCompleted) {
-    todo.isCompleted = isCompleted;
-    _firestoreService.updateTodoItem(todo);
-  }
-
-  // Method to delete a To-Do item
-  void _deleteTodoItem(String id) {
-    _firestoreService.deleteTodoItem(id);
+  void _removeTodoItem(int index) {
+    setState(() {
+      _todoList.removeAt(index);
+    });
   }
 }
