@@ -1,16 +1,33 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:study_planner/services/auth_service.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
-  const ForgotPasswordPage({super.key});
+  const ForgotPasswordPage({Key? key}) : super(key: key);
 
   @override
-  _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
+  State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
-  final AuthService _authService = AuthService();
+
+  Future<void> _resetPassword() async {
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: _emailController.text.trim());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password reset email sent'),
+        ),
+      );
+      Navigator.pop(context); // Go back to LoginPage
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message ?? 'Failed to send reset email'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,12 +39,24 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
+          children: <Widget>[
+            TextFormField(
               controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your email';
+                }
+                if (!value.contains('@')) {
+                  return 'Please enter a valid email';
+                }
+                return null;
+              },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24.0),
             ElevatedButton(
               onPressed: _resetPassword,
               child: const Text('Reset Password'),
@@ -37,22 +66,4 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       ),
     );
   }
-
-  void _resetPassword() async {
-    try {
-      await _authService.resetPassword(_emailController.text.trim());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password reset email sent!')),
-      );
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to send reset email: ${e.toString()}')),
-      );
-    }
-  }
-}
-
-extension on AuthService {
-  resetPassword(String trim) {}
 }
