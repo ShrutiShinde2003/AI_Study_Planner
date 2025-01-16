@@ -1,97 +1,127 @@
-import 'package:firebase_auth/firebase_auth.dart';
+// Flutter and Dart Registration Page with Firebase Integration
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
-
+class RegistrationPage extends StatefulWidget {
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  _RegistrationPageState createState() => _RegistrationPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscureText = true;
+class _RegistrationPageState extends State<RegistrationPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+
+  String? _errorMessage;
 
   Future<void> _register() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-        // Navigate to HomePage after successful registration
-        Navigator.pushReplacementNamed(context, '/home'); 
-      } on FirebaseAuthException catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message ?? 'Registration failed'),
-          ),
-        );
-      }
-    }
+  setState(() {
+    _errorMessage = null;
+  });
+
+  // Input validation
+  if (_nameController.text.trim().isEmpty) {
+    setState(() {
+      _errorMessage = 'Full Name cannot be empty.';
+    });
+    return;
   }
+
+  if (_emailController.text.trim().isEmpty) {
+    setState(() {
+      _errorMessage = 'Email cannot be empty.';
+    });
+    return;
+  }
+
+  if (!_emailController.text.trim().contains('@')) {
+    setState(() {
+      _errorMessage = 'Invalid email format.';
+    });
+    return;
+  }
+
+  if (_passwordController.text.trim().isEmpty) {
+    setState(() {
+      _errorMessage = 'Password cannot be empty.';
+    });
+    return;
+  }
+
+  if (_passwordController.text.trim().length < 6) {
+    setState(() {
+      _errorMessage = 'Password must be at least 6 characters long.';
+    });
+    return;
+  }
+
+  try {
+    // Create user with email and password
+    UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+
+    // Save user details to Firestore
+    await _firestore.collection('users').doc(userCredential.user!.uid).set({
+      'name': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'uid': userCredential.user!.uid,
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Registration successful!')),
+    );
+
+    _emailController.clear();
+    _passwordController.clear();
+    _nameController.clear();
+  } catch (e) {
+    setState(() {
+      _errorMessage = e.toString();
+    });
+  }
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-      ),
+      appBar: AppBar(title: Text('Register')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (_errorMessage != null)
+              Text(
+                _errorMessage!,
+                style: TextStyle(color: Colors.red),
               ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: _obscureText,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () {
-                      setState(() {
-                        _obscureText = !_obscureText;
-                      });
-                    },
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  // Add password strength validation if needed
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24.0),
-              ElevatedButton(
-                onPressed: _register,
-                child: const Text('Register'),
-              ),
-            ],
-          ),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(labelText: 'Full Name'),
+            ),
+            TextField(
+              controller: _emailController,
+              decoration: InputDecoration(labelText: 'Email'),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            TextField(
+              controller: _passwordController,
+              decoration: InputDecoration(labelText: 'Password'),
+              obscureText: true,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _register,
+              child: Text('Register'),
+            ),
+          ],
         ),
       ),
     );
