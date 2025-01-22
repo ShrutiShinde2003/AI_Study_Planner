@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:study_planner/components/my_textfield.dart';
 import 'package:study_planner/components/my_button.dart';
 import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/dashboard.dart';
 import 'package:study_planner/pages/forgot_pw_page.dart';
+import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
 import 'package:study_planner/pages/profile_page.dart';
 import 'package:study_planner/pages/register_page.dart';
@@ -47,7 +49,9 @@ class _LoginPageState extends State<LoginPage> {
           builder: (context) => BottomNavigation(
             homePage: HomePage(),
             todoPage: TodoListPage(),
+            dashboardPage: DashboardPage(),  
             profilePage: ProfilePage(),
+            GeminiPage: GeminiAIPage(),
           ), // Ensure LoginPage exists
         ),
       );

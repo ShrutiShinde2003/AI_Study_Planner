@@ -2,10 +2,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
 import 'package:study_planner/pages/login_page.dart';
 import 'package:study_planner/pages/profile_page.dart';
 import 'package:study_planner/pages/todo_list_page.dart';
+import 'package:study_planner/pages/dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +29,10 @@ class MyApp extends StatelessWidget {
           ? BottomNavigation(
               homePage: HomePage(),
               todoPage: TodoListPage(),
+              dashboardPage: DashboardPage(),
+              GeminiPage: GeminiAIPage(),
               profilePage: ProfilePage(),
+              
             )
           : const LoginPage(), // Replace with your actual login page
     );

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:study_planner/components/my_button.dart';
 import 'package:study_planner/pages/login_page.dart';
+import 'package:study_planner/pages/todo_list_page.dart'; // Import TodoListPage
 
 class HomePage extends StatelessWidget {
    HomePage({super.key});
@@ -13,15 +14,14 @@ class HomePage extends StatelessWidget {
 
   // Sign user out method
   void signUserOut(BuildContext context) {
-  FirebaseAuth.instance.signOut();
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => const LoginPage(),
-    ),
-  );
-}
-
+    FirebaseAuth.instance.signOut();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LoginPage(),
+      ),
+    );
+  }
 
   // Fetch user data
   Future<Map<String, dynamic>> fetchUserData() async {
@@ -73,13 +73,13 @@ class HomePage extends StatelessWidget {
                 SizedBox(height: 20),
                 MyButton(
                   onTap: () {
-                    // Navigate to ToDo page or other functionality
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //       builder: (context) => ToDoListPage()),
-                    // );
-                    print('tappp');
+                    // Navigate to ToDo page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TodoListPage(),
+                      ),
+                    );
                   },
                   text: 'Go to ToDo List',
                 ),
