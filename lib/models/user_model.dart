@@ -1,4 +1,3 @@
-// lib/models/todo_item.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel {
@@ -6,31 +5,32 @@ class UserModel {
   String userName;
   String email;
 
-  UserModel({required this.uid, required this.userName, required this.email});
+  UserModel({
+    required this.uid,
+    required this.userName,
+    required this.email,
+  });
 
+  // Convert the UserModel object to a Firestore-compatible map
   Map<String, dynamic> toMap() {
     return {
-      'userId': uid,
+      'uid': uid, // Ensure this matches Firestore field names
+      'userName': userName,
       'email': email,
-      'name': userName,
     };
   }
 
+  // Create a UserModel from a Firestore DocumentSnapshot
   factory UserModel.fromDocumentSnapshot(DocumentSnapshot snapshot) {
-    Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-    return UserModel(
-      uid: data['uid'],
-      userName: data['userName'] ?? '',
-      email: data['email'],
-    );
+  final data = snapshot.data();
+  if (data is! Map<String, dynamic>) {
+    throw Exception(
+        "Invalid data type in DocumentSnapshot: Expected Map, got ${data.runtimeType}");
   }
-
-  // // Create a To-Do item from a Firestore document
-  // factory UserModel.fromMap(Map<String, dynamic> map, String documentId) {
-  //   return UserModel(
-  //     uid: documentId,
-  //     userName: map['userName'] ?? '',
-  //     email: map['email'],
-  //   );
-  // }
+  return UserModel(
+    uid: data['uid'] ?? '',
+    userName: data['userName'] ?? '',
+    email: data['email'] ?? '',
+  );
+}
 }

@@ -1,94 +1,188 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:study_planner/components/my_textfield.dart';
+import 'package:study_planner/components/my_button.dart';
+import 'package:study_planner/models/user_model.dart';
+import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/home_page.dart';
+import 'package:study_planner/pages/login_page.dart';
+import 'package:study_planner/pages/profile_page.dart';
+import 'package:study_planner/pages/todo_list_page.dart'; // Import your Login Page here
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
+  const RegisterPage({super.key});
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscureText = true;
+  // Text editing controllers
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+  final userNameController = TextEditingController();
 
-  Future<void> _register() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-        // Navigate to HomePage after successful registration
-        Navigator.pushReplacementNamed(context, '/home'); 
-      } on FirebaseAuthException catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message ?? 'Registration failed'),
-          ),
-        );
-      }
-    }
+  // Firestore reference
+  CollectionReference ref = FirebaseFirestore.instance.collection('users');
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    userNameController.dispose();
+    super.dispose();
+  }
+
+  // Password confirmation logic
+  bool passwordConfirmed() {
+    return passwordController.text.trim() ==
+        confirmPasswordController.text.trim();
+  }
+
+  // Navigate to Login Page
+  void goToLoginPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LoginPage(), // Ensure LoginPage exists
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
+      backgroundColor: Colors.grey,
+      body: SafeArea(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
+            children: [
+              const SizedBox(height: 50),
+              // Let's create an account for you
+              Text(
+                'Let\'s create an account for you',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
+              ),
+
+              const SizedBox(height: 10),
+
+              // Username textfield
+              MyTextField(
+                controller: userNameController,
+                hintText: 'User Name',
+                obsureText: false,
+              ),
+
+              const SizedBox(height: 10),
+
+              // Email textfield
+              MyTextField(
+                controller: emailController,
+                hintText: 'Email',
+                obsureText: false,
+              ),
+
+              const SizedBox(height: 10),
+
+              // Password textfield
+              MyTextField(
+                controller: passwordController,
+                hintText: 'Password',
+                obsureText: true,
+              ),
+
+              const SizedBox(height: 10),
+
+              // Confirm password textfield
+              MyTextField(
+                controller: confirmPasswordController,
+                hintText: 'Confirm Password',
+                obsureText: true,
+              ),
+
+              const SizedBox(height: 25),
+
+              // Sign up button
+              MyButton(
+                text: 'Sign Up',
+                onTap: () async {
+                  if (passwordConfirmed()) {
+                    try {
+                      final credential = await FirebaseAuth.instance
+                          .createUserWithEmailAndPassword(
+                        email: emailController.text.trim(),
+                        password: passwordController.text.trim(),
+                      );
+
+                      // Get the UID of the newly created user
+                      final user = credential.user!;
+                      var uid = user.uid;
+
+                      // Create a UserModel instance
+                      UserModel userModel = UserModel(
+                        uid: uid,
+                        userName: userNameController.text.trim(),
+                        email: emailController.text.trim(),
+                      );
+
+                      // Add the user data to Firestore using the UID as the document ID
+                      await ref.doc(uid).set(userModel.toMap());
+
+                      print('User added successfully');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BottomNavigation(
+                            homePage: HomePage(),
+                            todoPage: TodoListPage(),
+                            profilePage: ProfilePage(),
+                          ), // Ensure LoginPage exists
+                        ),
+                      );
+                    } on FirebaseAuthException catch (e) {
+                      if (e.code == 'weak-password') {
+                        print('The password provided is too weak.');
+                      } else if (e.code == 'email-already-in-use') {
+                        print('The account already exists for that email.');
+                      }
+                    } catch (e) {
+                      print("Error during registration: $e");
+                    }
+                  } else {
+                    print('Password confirmation failed');
                   }
-                  if (!value.contains('@')) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
                 },
               ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: _obscureText,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () {
-                      setState(() {
-                        _obscureText = !_obscureText;
-                      });
-                    },
+
+              const SizedBox(height: 50),
+
+              // Already a member? Login here
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Already a member?',
+                    style: TextStyle(color: Colors.grey[700]),
                   ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  // Add password strength validation if needed
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24.0),
-              ElevatedButton(
-                onPressed: _register,
-                child: const Text('Register'),
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: goToLoginPage,
+                    child: const Text(
+                      'Login now',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

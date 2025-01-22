@@ -1,56 +1,30 @@
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:flutter/material.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:study_planner/pages/home_page.dart';
+// import 'package:study_planner/pages/login_or_register_page.dart';
 
-class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+// class AuthPage extends StatelessWidget {
+//   const AuthPage({super.key});
 
-  // Login with email and password
-  Future<User?> login(String email, String password) async {
-    try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email.trim(),
-        password: password.trim(),
-      );
-      User? user = userCredential.user;
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       body: StreamBuilder<User?>(
+//         stream: FirebaseAuth.instance.authStateChanges(),
+//         builder: (context, snapshot) {
+//           //user is logged in
+//           if (snapshot.hasData) {
+//             return HomePage();
+//           }
 
-      // Return the Firebase User if authenticated
-      return user;
-    } on FirebaseAuthException catch (e) {
-      // Handle Firebase-specific errors
-      if (e.code == 'user-not-found') {
-        throw Exception('No user found for that email.');
-      } else if (e.code == 'wrong-password') {
-        throw Exception('Wrong password provided.');
-      } else {
-        throw Exception('Login failed: ${e.message}');
-      }
-    } catch (e) {
-      throw Exception('Login failed: $e');
-    }
-  }
+//           //user is NOT logged in
+//           else {
+//             return LoginOrRegisterPage();
+//           }
+//         },
+//         ),
+//     );
 
-  // Register with email and password
-  Future<User?> register(String email, String password) async {
-    try {
-      UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
-        email: email.trim(),
-        password: password.trim(),
-      );
-      User? user = userCredential.user;
+//   }
+// }
 
-      // Return the Firebase User if registered
-      return user;
-    } on FirebaseAuthException catch (e) {
-      // Handle Firebase-specific errors
-      if (e.code == 'weak-password') {
-        throw Exception('The password provided is too weak.');
-      } else if (e.code == 'email-already-in-use') {
-        throw Exception('The account already exists for that email.');
-      } else {
-        throw Exception('Registration failed: ${e.message}');
-      }
-    } catch (e) {
-      throw Exception('Registration failed: $e');
-    }
-  }
-}
