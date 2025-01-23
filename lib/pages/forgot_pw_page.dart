@@ -31,8 +31,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               content: Text(e.message.toString()),
             );
           });
-    }
-    ;
+    };
   }
 
   @override

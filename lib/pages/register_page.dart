@@ -76,37 +76,141 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 10),
 
               // Username textfield
-              MyTextField(
+              TextField(
                 controller: userNameController,
-                hintText: 'User Name',
-                obsureText: false,
+                obscureText: false,
+                decoration: InputDecoration(
+                  hintText: 'User Name',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Corner radius
+                    borderSide: BorderSide.none, // Default border
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Corner radius
+                    borderSide: const BorderSide(
+                      color: Colors.black, // Border color for enabled state
+                      width: 1, // Border width
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Corner radius
+                    borderSide: const BorderSide(
+                      color: Colors.deepPurple, // Border color for focused state
+                      width: 1, // Border width
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 15,
+                    horizontal: 15,
+                  ), // Padding inside the text field
+                ),
               ),
 
               const SizedBox(height: 10),
 
               // Email textfield
-              MyTextField(
+              TextField(
                 controller: emailController,
-                hintText: 'Email',
-                obsureText: false,
+                obscureText: false,
+                decoration: InputDecoration(
+                  hintText: 'Email',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Corner radius
+                    borderSide: BorderSide.none, // Default border
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Corner radius
+                    borderSide: const BorderSide(
+                      color: Colors.black, // Border color for enabled state
+                      width: 1, // Border width
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Corner radius
+                    borderSide: const BorderSide(
+                      color: Colors.deepPurple, // Border color for focused state
+                      width: 1, // Border width
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 15,
+                    horizontal: 15,
+                  ), // Padding inside the text field
+                ),
               ),
 
               const SizedBox(height: 10),
 
               // Password textfield
-              MyTextField(
+              TextField(
                 controller: passwordController,
-                hintText: 'Password',
-                obsureText: true,
+                obscureText: false,
+                decoration: InputDecoration(
+                  hintText: 'Password',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Corner radius
+                    borderSide: BorderSide.none, // Default border
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Corner radius
+                    borderSide: const BorderSide(
+                      color: Colors.black, // Border color for enabled state
+                      width: 1, // Border width
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Corner radius
+                    borderSide: const BorderSide(
+                      color: Colors.deepPurple, // Border color for focused state
+                      width: 1, // Border width
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 15,
+                    horizontal: 15,
+                  ), // Padding inside the text field
+                ),
               ),
 
               const SizedBox(height: 10),
 
-              // Confirm password textfield
-              MyTextField(
+              /// Confirm Password textfield
+              TextField(
                 controller: confirmPasswordController,
-                hintText: 'Confirm Password',
-                obsureText: true,
+                obscureText: false,
+                decoration: InputDecoration(
+                  hintText: 'Confirm Password',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Corner radius
+                    borderSide: BorderSide.none, // Default border
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Corner radius
+                    borderSide: const BorderSide(
+                      color: Colors.black, // Border color for enabled state
+                      width: 1, // Border width
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Corner radius
+                    borderSide: const BorderSide(
+                      color: Colors.deepPurple, // Border color for focused state
+                      width: 1, // Border width
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 15,
+                    horizontal: 15,
+                  ), // Padding inside the text field
+                ),
               ),
 
               const SizedBox(height: 25),
@@ -137,7 +241,13 @@ class _RegisterPageState extends State<RegisterPage> {
                       // Add the user data to Firestore using the UID as the document ID
                       await ref.doc(uid).set(userModel.toMap());
 
-                      print('User added successfully');
+                      // Feedback to the user and debug console
+                      const successMessage = 'User added successfully';
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text(successMessage)),
+                      );
+                      print(successMessage);
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -151,16 +261,34 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       );
                     } on FirebaseAuthException catch (e) {
+                      String errorMessage;
                       if (e.code == 'weak-password') {
-                        print('The password provided is too weak.');
+                        errorMessage = 'The password provided is too weak.';
                       } else if (e.code == 'email-already-in-use') {
-                        print('The account already exists for that email.');
+                        errorMessage =
+                            'The account already exists for that email.';
+                      } else {
+                        errorMessage = 'Registration failed. Please try again.';
                       }
+                      // Feedback to the user and debug console
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(errorMessage)),
+                      );
+                      print(errorMessage);
                     } catch (e) {
+                      const errorMessage =
+                          'Error during registration. Please try again.';
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text(errorMessage)),
+                      );
                       print("Error during registration: $e");
                     }
                   } else {
-                    print('Password confirmation failed');
+                    const errorMessage = 'Password confirmation failed.';
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text(errorMessage)),
+                    );
+                    print(errorMessage);
                   }
                 },
               ),
