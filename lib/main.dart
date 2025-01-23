@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:study_planner/AI/GEMINI.dart';
 import 'package:study_planner/pages/login_page.dart';
 import 'package:study_planner/pages/register_page.dart';
 import 'package:study_planner/pages/forgot_password.dart';
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
         '/register': (context) => RegistrationPage(),
         '/forgot_password': (context) => const ForgotPasswordPage(),
         '/home': (context) => const HomePage(),
+        'AI':(context) => const Gemini(),
       },
     );
   }

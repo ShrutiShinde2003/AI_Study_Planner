@@ -67,12 +67,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
     );
 
     // Save user details to Firestore
-    await _firestore.collection('users').doc(userCredential.user!.uid).set({
-      'name': _nameController.text.trim(),
-      'email': _emailController.text.trim(),
-      'uid': userCredential.user!.uid,
-      'createdAt': DateTime.now().toIso8601String(),
-    });
+    
+    await FirebaseFirestore.instance.collection('users').add(String name, String email) async{
+      'name': name,
+      'email': email;
+      //'uid': userCredential.user!.uid,
+      //'createdAt': DateTime.now().toIso8601String();
+    };
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Registration successful!')),

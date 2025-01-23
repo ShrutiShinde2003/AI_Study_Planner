@@ -39,6 +39,8 @@ dependencies:
   firebase_auth: ^4.10.0
   firebase_auth_web: ^5.8.13
   cloud_firestore: ^4.17.5
+  #google_generativeai : ^0.1.0
+  #GEMINI_API_KEY : ^8.0.1
 
 
 

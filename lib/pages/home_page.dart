@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:study_planner/AI/GEMINI.dart';
 import 'package:study_planner/pages/todo_list_page.dart';  // Import the ToDo page
 
 class HomePage extends StatelessWidget {
@@ -44,6 +45,18 @@ class HomePage extends StatelessWidget {
                 );
               },
               child: const Text('Go to To-Do List'),
+            ),
+            const SizedBox(height: 20),
+            // Button to navigate to the To-Do List page
+            ElevatedButton(
+              onPressed: () {
+                // Navigate to the To-Do List page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Gemini()),
+                );
+              },
+              child: const Text('Gemini AI'),
             ),
           ],
         ),
