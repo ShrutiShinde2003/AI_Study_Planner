@@ -1,138 +1,193 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:study_planner/components/my_textfield.dart';
+import 'package:study_planner/components/my_button.dart';
+import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/dashboard.dart';
+import 'package:study_planner/pages/forgot_pw_page.dart';
+import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
-
+import 'package:study_planner/pages/profile_page.dart';
+import 'package:study_planner/pages/register_page.dart';
+import 'package:study_planner/pages/todo_list_page.dart'; // Import your Register Page here
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscureText = true;
-  bool _isLoading = false;
+  // Text editing controllers
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  // Sign user in method
+  void signUserIn() async {
+    // Show loading circle
+    showDialog(
+        context: context,
+        builder: (context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        });
+
+    // Try sign in
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      // Pop the loading circle
+      Navigator.pop(context);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BottomNavigation(
+            homePage: HomePage(),
+            todoPage: TodoListPage(),
+            dashboardPage: DashboardPage(),  
+            profilePage: ProfilePage(),
+            GeminiPage: ChatScreen(),
+          ), // Ensure LoginPage exists
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      // Pop the loading circle
+      Navigator.pop(context);
+      // Show error message
+      showErrorMessage(e.code);
+    }
   }
 
-  Future<void> _signIn() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      try {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
+  // Error message to user
+  void showErrorMessage(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.deepPurple,
+          title: Center(
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
         );
+      },
+    );
+  }
 
-        final user = FirebaseAuth.instance.currentUser;
-        print('User logged in: ${user?.email}');
-
-        if (context.mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomePage()),
-          );
-        }
-      } on FirebaseAuthException catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Login failed')),
-        );
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+  // Go to Register Page
+  void goToRegisterPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            const RegisterPage(), // Ensure RegisterPage exists
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
+      backgroundColor: Colors.grey,
+      body: SafeArea(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
+            children: [
+              const SizedBox(height: 50),
+
+              // Welcome back
+              const Text(
+                'Welcome back, you\'ve been missed',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: _obscureText,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureText ? Icons.visibility : Icons.visibility_off,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureText = !_obscureText;
-                      });
-                    },
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
+
+              const SizedBox(height: 20),
+
+              // Email textfield
+              MyTextField(
+                controller: emailController,
+                hintText: 'Email',
+                obsureText: false,
               ),
-              const SizedBox(height: 24.0),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/home');
+
+              const SizedBox(height: 10),
+
+              // Password textfield
+              MyTextField(
+                controller: passwordController,
+                hintText: 'Password',
+                obsureText: true,
+              ),
+
+              const SizedBox(height: 10),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ForgotPasswordPage(),
+                          ),
+                        );
                       },
-                      child: const Text('Login'),
+                      child: const Text(
+                        'Forgot Password',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/forgot_password');
-                },
-                child: const Text('Forgot Password?'),
+                  ],
+                ),
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/register');
-                },
-                child: const Text('Register'),
+
+              const SizedBox(height: 10),
+
+              // Sign in button
+              MyButton(
+                text: 'Sign in',
+                onTap: signUserIn,
+              ),
+
+              const SizedBox(height: 50),
+
+              // Not a member? Register here
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Not a member?',
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: goToRegisterPage,
+                    child: const Text(
+                      'Register now',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
