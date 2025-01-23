@@ -8,6 +8,7 @@ import 'package:study_planner/pages/login_page.dart';
 import 'package:study_planner/pages/profile_page.dart';
 import 'package:study_planner/pages/todo_list_page.dart';
 import 'package:study_planner/pages/dashboard.dart';
+import 'package:study_planner/pages/start_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,11 +31,11 @@ class MyApp extends StatelessWidget {
               homePage: HomePage(),
               todoPage: TodoListPage(),
               dashboardPage: DashboardPage(),
-              GeminiPage: GeminiAIPage(),
+              GeminiPage: ChatScreen(),
               profilePage: ProfilePage(),
               
             )
-          : const LoginPage(), // Replace with your actual login page
+          : const WelcomePage(), // Replace with your actual login page
     );
   }
 }

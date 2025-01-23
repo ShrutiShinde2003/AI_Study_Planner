@@ -29,11 +29,11 @@ class FirestoreService {
 
   // Update To-Do item
   Future<void> updateTodoItem(TodoItem todo) {
-    return _todoCollection.doc(todo.id).update(todo.toMap());
+    return _todoCollection.doc(todo.username).update(todo.toMap());
   }
 
   // Delete To-Do item
-  Future<void> deleteTodoItem(String id) {
-    return _todoCollection.doc(id).delete();
+  Future<void> deleteTodoItem(String username) {
+    return _todoCollection.doc(username).delete();
   }
 }

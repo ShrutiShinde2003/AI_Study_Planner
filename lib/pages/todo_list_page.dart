@@ -1,26 +1,30 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:study_planner/models/todo_item.dart';
+import 'package:study_planner/services/firestore_service.dart';
 
 class TodoListPage extends StatefulWidget {
-  const TodoListPage({Key? key}) : super(key: key);
-
   @override
   _TodoListPageState createState() => _TodoListPageState();
 }
 
 class _TodoListPageState extends State<TodoListPage> {
-  final List<Map<String, dynamic>> _todoList = [];
+  final FirestoreService _firestoreService = FirestoreService();
   final TextEditingController _todoController = TextEditingController();
-
-  // Reference to the Firestore collection for the current user
-  final CollectionReference _userTodos =
-      FirebaseFirestore.instance.collection('users').doc('user_id').collection('todos');
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('To-Do List'),
+        title: Text('To-Do List'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () {
+              // Add your logout logic here
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -31,53 +35,56 @@ class _TodoListPageState extends State<TodoListPage> {
                 Expanded(
                   child: TextField(
                     controller: _todoController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'New To-Do',
                       border: OutlineInputBorder(),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: _addTodoItem,
-                  child: const Text('Add'),
+                  child: Text('Add'),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _userTodos.snapshots(),
+            child: StreamBuilder<List<TodoItem>>(
+              stream: _firestoreService.getTodoList(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Center(child: CircularProgressIndicator());
                 }
-                if (snapshot.hasError) {
-                  return const Center(child: Text('Error loading to-dos.'));
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text('No To-Do items'));
                 }
-                final todos = snapshot.data!.docs;
+
+                final todoList = snapshot.data!;
                 return ListView.builder(
-                  itemCount: todos.length,
+                  itemCount: todoList.length,
                   itemBuilder: (context, index) {
-                    final todo = todos[index];
+                    final todo = todoList[index];
                     return ListTile(
                       title: Text(
-                        todo['title'],
+                        todo.title,
                         style: TextStyle(
-                          decoration: todo['completed']
+                          decoration: todo.isCompleted
                               ? TextDecoration.lineThrough
                               : TextDecoration.none,
                         ),
                       ),
                       leading: Checkbox(
-                        value: todo['completed'],
+                        value: todo.isCompleted,
                         onChanged: (value) {
-                          _updateTodoItem(todo.id, value!);
+                          _toggleTodoCompletion(todo, value!);
                         },
                       ),
                       trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => _deleteTodoItem(todo.id),
+                        icon: Icon(Icons.delete),
+                        onPressed: () {
+                          _deleteTodoItem(todo.username);
+                        },
                       ),
                     );
                   },
@@ -90,22 +97,30 @@ class _TodoListPageState extends State<TodoListPage> {
     );
   }
 
+  // Method to add a new To-Do item
   void _addTodoItem() {
     if (_todoController.text.isNotEmpty) {
-      _userTodos.add({
-        'title': _todoController.text,
-        'completed': false,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-      _todoController.clear();
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final newTodo = TodoItem(
+          username: user.displayName ?? 'default', // Firestore will generate the ID
+          title: _todoController.text.trim(),
+          uid: user.uid,  // Use the current user's UID
+        );
+        _firestoreService.addTodoItem(newTodo);
+        _todoController.clear();
+      }
     }
   }
 
-  void _updateTodoItem(String id, bool completed) {
-    _userTodos.doc(id).update({'completed': completed});
+  // Method to toggle completion status of a To-Do item
+  void _toggleTodoCompletion(TodoItem todo, bool isCompleted) {
+    todo.isCompleted = isCompleted;
+    _firestoreService.updateTodoItem(todo);
   }
 
+  // Method to delete a To-Do item
   void _deleteTodoItem(String id) {
-    _userTodos.doc(id).delete();
+    _firestoreService.deleteTodoItem(id);
   }
 }

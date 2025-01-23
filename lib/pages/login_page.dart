@@ -51,7 +51,7 @@ class _LoginPageState extends State<LoginPage> {
             todoPage: TodoListPage(),
             dashboardPage: DashboardPage(),  
             profilePage: ProfilePage(),
-            GeminiPage: GeminiAIPage(),
+            GeminiPage: ChatScreen(),
           ), // Ensure LoginPage exists
         ),
       );
