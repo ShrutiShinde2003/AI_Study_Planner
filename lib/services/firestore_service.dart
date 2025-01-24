@@ -7,26 +7,43 @@ class FirestoreService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Reference to the global To-Do collection (not inside user subcollection)
-  CollectionReference get _todoCollection => _db.collection(
-      'tasks'); // Store tasks in a global tasks collection, not inside user subcollection
+  CollectionReference get _todoCollection => _db.collection('tasks');
 
   // Get To-Do List stream for the current user
   Stream<List<TodoItem>> getTodoList() {
     final user = _auth.currentUser;
     if (user != null) {
       return _todoCollection
-          .where('uid',
-              isEqualTo:
-                  user.uid) // Only fetch tasks belonging to the current user
+          .where('uid', isEqualTo: user.uid) // Fetch tasks for the current user
           .snapshots()
           .map((snapshot) {
         return snapshot.docs
-            .map((doc) =>
-                TodoItem.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+            .map((doc) => TodoItem.fromMap(doc.data() as Map<String, dynamic>, doc.id))
             .toList();
       });
     } else {
-      return Stream.value([]); // Return empty if the user is not authenticated
+      return Stream.value([]); // Return empty stream if the user is not authenticated
+    }
+  }
+
+  // Get To-Do List once for the current user
+  Future<List<TodoItem>> getTodoListOnce() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      try {
+        final snapshot = await _todoCollection
+            .where('uid', isEqualTo: user.uid)
+            .get(); // Fetch all documents for the current user
+
+        return snapshot.docs
+            .map((doc) => TodoItem.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+            .toList();
+      } catch (e) {
+        print('Error fetching To-Do list: $e');
+        rethrow;
+      }
+    } else {
+      throw Exception("User is not authenticated");
     }
   }
 
@@ -35,7 +52,6 @@ class FirestoreService {
     final user = _auth.currentUser;
     if (user != null) {
       try {
-        // Only add the To-Do item if the user is authenticated
         await _todoCollection.add({
           ...todo.toMap(), // Spread the map from TodoItem
           'uid': user.uid, // Store the UID for user-specific data
@@ -54,7 +70,6 @@ class FirestoreService {
     final user = _auth.currentUser;
     if (user != null) {
       try {
-        // Use todo.username (which holds the document ID) instead of todo.uid
         await _todoCollection.doc(todo.username).update(todo.toMap());
       } catch (e) {
         print('Error updating To-Do item: $e');
@@ -70,7 +85,6 @@ class FirestoreService {
     final user = _auth.currentUser;
     if (user != null) {
       try {
-        // Ensure the document belongs to the current user before deleting
         await _todoCollection.doc(todoId).delete();
       } catch (e) {
         print('Error deleting To-Do item: $e');

@@ -8,7 +8,7 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF9B59B6), // Purple background color
+      backgroundColor: const Color.fromARGB(255, 90, 82, 210), // background color
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -19,7 +19,7 @@ class WelcomePage extends StatelessWidget {
               child: Center(
                 child: Image.asset(
                   'lib/assets/images/start.png', // Replace with your image path
-                  height: 250, // Adjust height as needed
+                  height: 350, // Adjust height as needed
                 ),
               ),
             ),
@@ -44,7 +44,7 @@ class WelcomePage extends StatelessWidget {
                   // Get Started Button
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
+                      backgroundColor: const Color.fromARGB(255, 90, 82, 210),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
@@ -66,7 +66,7 @@ class WelcomePage extends StatelessWidget {
                     child: const Text(
                       "Get Started",
                       style: TextStyle(
-                        color: Color(0xFF9B59B6), // Purple text
+                        color: Colors.white, // white text
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -99,7 +99,7 @@ class WelcomePage extends StatelessWidget {
                         child: const Text(
                           "Login now",
                           style: TextStyle(
-                            color: Colors.white,
+                            color:Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                             decoration: TextDecoration.underline,

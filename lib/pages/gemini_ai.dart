@@ -2,19 +2,19 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-void main() {
-  runApp(ChatApp());
-}
+// void main() {
+//   runApp(ChatApp());
+// }
 
-class ChatApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ChatScreen(),
-    );
-  }
-}
+// class ChatApp extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       debugShowCheckedModeBanner: false,
+//       home: ChatScreen(),
+//     );
+//   }
+// }
 
 class ChatScreen extends StatefulWidget {
   @override
@@ -28,7 +28,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // Function to send a message to the Flask server
   Future<void> sendMessage(String message) async {
-    final String flaskUrl = "http://127.0.0.1:5000/chat"; // Update with Flask server URL
+    final String flaskUrl = "http://192.168.255.84:5000/api/endpoint"; // Update with Flask server URL
 
     setState(() {
       _isLoading = true; // Show loading indicator
