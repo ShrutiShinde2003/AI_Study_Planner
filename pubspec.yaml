@@ -39,6 +39,7 @@ dependencies:
   firebase_auth:
   cloud_firestore:
   fl_chart:
+  google_generative_ai:
 
 
 

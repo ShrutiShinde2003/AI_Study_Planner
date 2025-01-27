@@ -6,7 +6,7 @@ import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
 import 'package:study_planner/pages/login_page.dart';
 import 'package:study_planner/pages/profile_page.dart';
-import 'package:study_planner/pages/todo_list_page.dart';
+import 'package:study_planner/pages/todo_list.dart';
 import 'package:study_planner/pages/dashboard.dart';
 import 'package:study_planner/pages/start_page.dart';
 

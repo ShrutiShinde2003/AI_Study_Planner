@@ -9,7 +9,7 @@ import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
 import 'package:study_planner/pages/profile_page.dart';
 import 'package:study_planner/pages/register_page.dart';
-import 'package:study_planner/pages/todo_list_page.dart'; // Import your Register Page here
+import 'package:study_planner/pages/todo_list.dart'; // Import your Register Page here
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
