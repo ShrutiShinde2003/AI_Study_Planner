@@ -9,7 +9,7 @@ import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
 import 'package:study_planner/pages/profile_page.dart';
 import 'package:study_planner/pages/register_page.dart';
-import 'package:study_planner/pages/todo_list_page.dart'; // Import your Register Page here
+import 'package:study_planner/pages/todo_list.dart'; // Import your Register Page here
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -114,20 +114,78 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 20),
 
-              // Email textfield
-              MyTextField(
-                controller: emailController,
-                hintText: 'Email',
-                obsureText: false,
+              /// Email Textfield
+              SizedBox(
+                width: 350,
+                child: TextField(
+                  controller: emailController,
+                  obscureText: false,
+                  decoration: InputDecoration(
+                    hintText: 'Email',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: BorderSide.none, // Default border
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.black, // Border color for enabled state
+                        width: 1, // Border width
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.deepPurple, // Border color for focused state
+                        width: 1, // Border width
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 15,
+                    ), // Padding inside the text field
+                  ),
+                ),
               ),
 
               const SizedBox(height: 10),
 
-              // Password textfield
-              MyTextField(
-                controller: passwordController,
-                hintText: 'Password',
-                obsureText: true,
+              /// Password textfield
+              SizedBox(
+                width: 350,
+                child: TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: 'Password',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: BorderSide.none, // Default border
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.black, // Border color for enabled state
+                        width: 1, // Border width
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.deepPurple, // Border color for focused state
+                        width: 1, // Border width
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 15,
+                    ), // Padding inside the text field
+                  ),
+                ),
               ),
 
               const SizedBox(height: 10),

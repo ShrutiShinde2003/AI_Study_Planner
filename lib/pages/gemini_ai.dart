@@ -1,20 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-
-void main() {
-  runApp(ChatApp());
-}
-
-class ChatApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ChatScreen(),
-    );
-  }
-}
+import 'package:study_planner/services/gemini_api_service.dart';
 
 class ChatScreen extends StatefulWidget {
   @override
@@ -22,45 +8,33 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final TextEditingController _controller = TextEditingController(); // Input controller
-  String _chatbotReply = ""; // Stores chatbot's response
-  bool _isLoading = false; // Loading indicator
+  final TextEditingController _controller = TextEditingController();
+  String _chatbotReply = "";
+  bool _isLoading = false;
 
-  // Function to send a message to the Flask server
+  // Initialize the Gemini API service
+  late GeminiApiService _geminiApiService;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pass the API key to the service
+    _geminiApiService = GeminiApiService('AIzaSyARGA2fjBuvflLE6-HOE1i9CGDuXTk8krk');
+  }
+
   Future<void> sendMessage(String message) async {
-    final String flaskUrl = "http://127.0.0.1:5000/chat"; // Update with Flask server URL
+    if (message.isEmpty) return;
 
     setState(() {
-      _isLoading = true; // Show loading indicator
+      _isLoading = true;
     });
 
-    try {
-      // Send POST request to Flask server
-      final response = await http.post(
-        Uri.parse(flaskUrl),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"message": message}),
-      );
+    final reply = await _geminiApiService.sendMessage(message);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          _chatbotReply = data['reply']; // Display chatbot's response
-        });
-      } else {
-        setState(() {
-          _chatbotReply = "Error: ${response.body}"; // Handle errors
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _chatbotReply = "Error: Unable to connect to the server."; // Handle connection errors
-      });
-    } finally {
-      setState(() {
-        _isLoading = false; // Hide loading indicator
-      });
-    }
+    setState(() {
+      _chatbotReply = reply;
+      _isLoading = false;
+    });
   }
 
   @override
@@ -94,13 +68,13 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             SizedBox(height: 10),
             _isLoading
-                ? CircularProgressIndicator() // Show a loading spinner while waiting for response
+                ? CircularProgressIndicator()
                 : ElevatedButton(
                     onPressed: () {
-                      String userMessage = _controller.text.trim();
+                      final userMessage = _controller.text.trim();
                       if (userMessage.isNotEmpty) {
-                        sendMessage(userMessage); // Send message to Flask server
-                        _controller.clear(); // Clear input field
+                        sendMessage(userMessage);
+                        _controller.clear();
                       }
                     },
                     child: Text("Send"),

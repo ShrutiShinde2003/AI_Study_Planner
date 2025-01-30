@@ -10,7 +10,7 @@ import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
 import 'package:study_planner/pages/login_page.dart';
 import 'package:study_planner/pages/profile_page.dart';
-import 'package:study_planner/pages/todo_list_page.dart'; // Import your Login Page here
+import 'package:study_planner/pages/todo_list.dart'; // Import your Login Page here
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -76,140 +76,152 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 10),
 
               // Username textfield
-              TextField(
-                controller: userNameController,
-                obscureText: false,
-                decoration: InputDecoration(
-                  hintText: 'User Name',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), // Corner radius
-                    borderSide: BorderSide.none, // Default border
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), // Corner radius
-                    borderSide: const BorderSide(
-                      color: Colors.black, // Border color for enabled state
-                      width: 1, // Border width
+              SizedBox(
+                width: 350,
+                child: TextField(
+                  controller: userNameController,
+                  obscureText: false,
+                  decoration: InputDecoration(
+                    hintText: 'User Name',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: BorderSide.none, // Default border
                     ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), // Corner radius
-                    borderSide: const BorderSide(
-                      color: Colors.deepPurple, // Border color for focused state
-                      width: 1, // Border width
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.black, // Border color for enabled state
+                        width: 1, // Border width
+                      ),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.deepPurple, // Border color for focused state
+                        width: 1, // Border width
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 15,
+                    ), // Padding inside the text field
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 15,
-                    horizontal: 15,
-                  ), // Padding inside the text field
                 ),
               ),
 
               const SizedBox(height: 10),
 
               // Email textfield
-              TextField(
-                controller: emailController,
-                obscureText: false,
-                decoration: InputDecoration(
-                  hintText: 'Email',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), // Corner radius
-                    borderSide: BorderSide.none, // Default border
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), // Corner radius
-                    borderSide: const BorderSide(
-                      color: Colors.black, // Border color for enabled state
-                      width: 1, // Border width
+              SizedBox(
+                width: 350,
+                child: TextField(
+                  controller: emailController,
+                  obscureText: false,
+                  decoration: InputDecoration(
+                    hintText: 'Email',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: BorderSide.none, // Default border
                     ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), // Corner radius
-                    borderSide: const BorderSide(
-                      color: Colors.deepPurple, // Border color for focused state
-                      width: 1, // Border width
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.black, // Border color for enabled state
+                        width: 1, // Border width
+                      ),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.deepPurple, // Border color for focused state
+                        width: 1, // Border width
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 15,
+                    ), // Padding inside the text field
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 15,
-                    horizontal: 15,
-                  ), // Padding inside the text field
                 ),
               ),
 
               const SizedBox(height: 10),
 
               // Password textfield
-              TextField(
-                controller: passwordController,
-                obscureText: false,
-                decoration: InputDecoration(
-                  hintText: 'Password',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), // Corner radius
-                    borderSide: BorderSide.none, // Default border
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), // Corner radius
-                    borderSide: const BorderSide(
-                      color: Colors.black, // Border color for enabled state
-                      width: 1, // Border width
+              SizedBox(
+                width: 350,
+                child: TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: 'Password',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: BorderSide.none, // Default border
                     ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), // Corner radius
-                    borderSide: const BorderSide(
-                      color: Colors.deepPurple, // Border color for focused state
-                      width: 1, // Border width
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.black, // Border color for enabled state
+                        width: 1, // Border width
+                      ),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.deepPurple, // Border color for focused state
+                        width: 1, // Border width
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 15,
+                    ), // Padding inside the text field
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 15,
-                    horizontal: 15,
-                  ), // Padding inside the text field
                 ),
               ),
 
               const SizedBox(height: 10),
 
               /// Confirm Password textfield
-              TextField(
-                controller: confirmPasswordController,
-                obscureText: false,
-                decoration: InputDecoration(
-                  hintText: 'Confirm Password',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), // Corner radius
-                    borderSide: BorderSide.none, // Default border
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), // Corner radius
-                    borderSide: const BorderSide(
-                      color: Colors.black, // Border color for enabled state
-                      width: 1, // Border width
+              SizedBox(
+                width: 350,
+                child: TextField(
+                  controller: confirmPasswordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: 'Confirm Password',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: BorderSide.none, // Default border
                     ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), // Corner radius
-                    borderSide: const BorderSide(
-                      color: Colors.deepPurple, // Border color for focused state
-                      width: 1, // Border width
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.black, // Border color for enabled state
+                        width: 1, // Border width
+                      ),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.deepPurple, // Border color for focused state
+                        width: 1, // Border width
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 15,
+                    ), // Padding inside the text field
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 15,
-                    horizontal: 15,
-                  ), // Padding inside the text field
                 ),
               ),
 
