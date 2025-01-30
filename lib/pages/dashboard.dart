@@ -1,6 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:study_planner/models/todo_item.dart';
+import 'package:study_planner/models/task_item.dart';
 import 'package:study_planner/services/firestore_service.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -9,7 +9,7 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  final FirestoreService _firestoreService = FirestoreService();
+  //final FirestoreService _firestoreService = FirestoreService();
   Map<String, int> _completedAssignments = {};
 
   @override
@@ -19,14 +19,14 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _fetchCompletedAssignments() async {
-    final todoList = await _firestoreService.getTodoListOnce();
+    //final todoList = await _firestoreService.getTodoListOnce();
     final Map<String, int> subjectCount = {};
 
-    for (var todo in todoList) {
-      if (todo.isCompleted) {
-        subjectCount[todo.title] = (subjectCount[todo.title] ?? 0) + 1;
-      }
-    }
+    // for (var todo in todoList) {
+    //   if (todo.isCompleted) {
+    //     subjectCount[todo.title] = (subjectCount[todo.title] ?? 0) + 1;
+    //   }
+    // }
 
     setState(() {
       _completedAssignments = subjectCount;
