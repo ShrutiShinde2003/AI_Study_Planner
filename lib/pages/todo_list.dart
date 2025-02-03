@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:study_planner/models/todo_item.dart';
-import 'package:study_planner/services/firestore_service.dart';
+import 'package:study_planner/services/firestore_service(tasks).dart';
 
 class TodoListPage extends StatefulWidget {
   @override

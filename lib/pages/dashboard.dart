@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:study_planner/models/todo_item.dart';
-import 'package:study_planner/services/firestore_service.dart';
+import 'package:study_planner/services/firestore_service(tasks).dart';
 
 class DashboardPage extends StatefulWidget {
   @override

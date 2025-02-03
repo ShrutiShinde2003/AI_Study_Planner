@@ -71,18 +71,18 @@ class HomePage extends StatelessWidget {
                 SizedBox(height: 10),
                 Text('Email: ${userData['email']}'),
                 SizedBox(height: 20),
-                MyButton(
-                  onTap: () {
-                    // Navigate to ToDo page
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TodoListPage(),
-                      ),
-                    );
-                  },
-                  text: 'Go to ToDo List',
-                ),
+                // MyButton(
+                //   onTap: () {
+                //     // Navigate to ToDo page
+                //     Navigator.push(
+                //       context,
+                //       MaterialPageRoute(
+                //         builder: (context) => TodoListPage(),
+                //       ),
+                //     );
+                //   },
+                //   text: 'Go to ToDo List',
+                // ),
               ],
             ),
           );

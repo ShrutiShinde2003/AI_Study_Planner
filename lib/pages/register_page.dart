@@ -57,7 +57,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey,
+      backgroundColor: Colors.indigo.shade200, // background color
       body: SafeArea(
         child: Center(
           child: Column(
@@ -68,8 +68,9 @@ class _RegisterPageState extends State<RegisterPage> {
               Text(
                 'Let\'s create an account for you',
                 style: TextStyle(
-                  color: Colors.grey,
+                  color: Colors.white,
                   fontSize: 16,
+                  fontWeight: FontWeight.bold
                 ),
               ),
 
@@ -77,7 +78,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
               // Username textfield
               SizedBox(
-                width: 350,
+                width: 370,
                 child: TextField(
                   controller: userNameController,
                   obscureText: false,
@@ -92,14 +93,14 @@ class _RegisterPageState extends State<RegisterPage> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Corner radius
                       borderSide: const BorderSide(
-                        color: Colors.black, // Border color for enabled state
+                        color: Colors.white, // Border color for enabled state
                         width: 1, // Border width
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Corner radius
                       borderSide: const BorderSide(
-                        color: Colors.deepPurple, // Border color for focused state
+                        color: Colors.indigo, // Border color for focused state
                         width: 1, // Border width
                       ),
                     ),
@@ -115,7 +116,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
               // Email textfield
               SizedBox(
-                width: 350,
+                width: 370,
                 child: TextField(
                   controller: emailController,
                   obscureText: false,
@@ -130,14 +131,14 @@ class _RegisterPageState extends State<RegisterPage> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Corner radius
                       borderSide: const BorderSide(
-                        color: Colors.black, // Border color for enabled state
+                        color: Colors.white, // Border color for enabled state
                         width: 1, // Border width
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Corner radius
                       borderSide: const BorderSide(
-                        color: Colors.deepPurple, // Border color for focused state
+                        color: Colors.indigo, // Border color for focused state
                         width: 1, // Border width
                       ),
                     ),
@@ -153,7 +154,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
               // Password textfield
               SizedBox(
-                width: 350,
+                width: 370,
                 child: TextField(
                   controller: passwordController,
                   obscureText: true,
@@ -168,14 +169,14 @@ class _RegisterPageState extends State<RegisterPage> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Corner radius
                       borderSide: const BorderSide(
-                        color: Colors.black, // Border color for enabled state
+                        color: Colors.white, // Border color for enabled state
                         width: 1, // Border width
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Corner radius
                       borderSide: const BorderSide(
-                        color: Colors.deepPurple, // Border color for focused state
+                        color: Colors.indigo, // Border color for focused state
                         width: 1, // Border width
                       ),
                     ),
@@ -191,7 +192,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
               /// Confirm Password textfield
               SizedBox(
-                width: 350,
+                width: 370,
                 child: TextField(
                   controller: confirmPasswordController,
                   obscureText: true,
@@ -206,14 +207,14 @@ class _RegisterPageState extends State<RegisterPage> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Corner radius
                       borderSide: const BorderSide(
-                        color: Colors.black, // Border color for enabled state
+                        color: Colors.white, // Border color for enabled state
                         width: 1, // Border width
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Corner radius
                       borderSide: const BorderSide(
-                        color: Colors.deepPurple, // Border color for focused state
+                        color: Colors.indigo, // Border color for focused state
                         width: 1, // Border width
                       ),
                     ),
@@ -305,7 +306,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 },
               ),
 
-              const SizedBox(height: 50),
+              const SizedBox(height: 20),
 
               // Already a member? Login here
               Row(
@@ -313,7 +314,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 children: [
                   Text(
                     'Already a member?',
-                    style: TextStyle(color: Colors.grey[700]),
+                    style: TextStyle(color: Colors.white),
                   ),
                   const SizedBox(width: 4),
                   GestureDetector(
@@ -321,7 +322,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: const Text(
                       'Login now',
                       style: TextStyle(
-                        color: Colors.blue,
+                        color: Colors.indigo,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

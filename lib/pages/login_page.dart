@@ -49,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
           builder: (context) => BottomNavigation(
             homePage: HomePage(),
             todoPage: TodoListPage(),
-            dashboardPage: DashboardPage(),  
+            dashboardPage: DashboardPage(),
             profilePage: ProfilePage(),
             GeminiPage: ChatScreen(),
           ), // Ensure LoginPage exists
@@ -95,7 +95,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey,
+      backgroundColor: Colors.indigo.shade200, // background color
       body: SafeArea(
         child: Center(
           child: Column(
@@ -109,6 +109,7 @@ class _LoginPageState extends State<LoginPage> {
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
@@ -116,7 +117,7 @@ class _LoginPageState extends State<LoginPage> {
 
               /// Email Textfield
               SizedBox(
-                width: 350,
+                width: 370,
                 child: TextField(
                   controller: emailController,
                   obscureText: false,
@@ -131,14 +132,14 @@ class _LoginPageState extends State<LoginPage> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Corner radius
                       borderSide: const BorderSide(
-                        color: Colors.black, // Border color for enabled state
+                        color: Colors.white, // Border color for enabled state
                         width: 1, // Border width
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Corner radius
                       borderSide: const BorderSide(
-                        color: Colors.deepPurple, // Border color for focused state
+                        color: Colors.indigo, // Border color for focused state
                         width: 1, // Border width
                       ),
                     ),
@@ -154,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
 
               /// Password textfield
               SizedBox(
-                width: 350,
+                width: 370,
                 child: TextField(
                   controller: passwordController,
                   obscureText: true,
@@ -169,14 +170,14 @@ class _LoginPageState extends State<LoginPage> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Corner radius
                       borderSide: const BorderSide(
-                        color: Colors.black, // Border color for enabled state
+                        color: Colors.white, // Border color for enabled state
                         width: 1, // Border width
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Corner radius
                       borderSide: const BorderSide(
-                        color: Colors.deepPurple, // Border color for focused state
+                        color: Colors.indigo, // Border color for focused state
                         width: 1, // Border width
                       ),
                     ),
@@ -207,7 +208,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: const Text(
                         'Forgot Password',
                         style: TextStyle(
-                          color: Colors.blue,
+                          color: Colors.indigo,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -224,15 +225,18 @@ class _LoginPageState extends State<LoginPage> {
                 onTap: signUserIn,
               ),
 
-              const SizedBox(height: 50),
+              const SizedBox(height: 20),
 
               // Not a member? Register here
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
+                  const Text(
                     'Not a member?',
-                    style: TextStyle(color: Colors.grey[700]),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(width: 4),
                   GestureDetector(
@@ -240,7 +244,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: const Text(
                       'Register now',
                       style: TextStyle(
-                        color: Colors.blue,
+                        color: Colors.indigo,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
