@@ -1,3 +1,4 @@
+import 'package:study_planner/config/api_keys.dart';  // Import API key file
 import 'package:flutter/material.dart';
 import 'package:study_planner/services/gemini_api_service.dart';
 
@@ -11,13 +12,12 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = false;
   late GeminiApiService _geminiApiService;
 
-  // List to store chat messages
   List<Map<String, String>> _messages = [];
 
   @override
   void initState() {
     super.initState();
-    _geminiApiService = GeminiApiService('AIzaSyDfWLB3netj0sjIx8MVhEwiOzUQd7Ygigg'); // Replace with actual API key
+    _geminiApiService = GeminiApiService(ApiKeys.geminiApiKey); // Use API key from external file
   }
 
   Future<void> sendMessage(String message) async {
