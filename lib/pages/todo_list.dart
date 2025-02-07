@@ -1,8 +1,7 @@
-// lib/pages/todo_list_page.dart
-
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:study_planner/models/todo_item.dart';
-import 'package:study_planner/services/firestore_service.dart';
+import 'package:study_planner/services/firestore_service(tasks).dart';
 
 class TodoListPage extends StatefulWidget {
   @override
@@ -84,7 +83,7 @@ class _TodoListPageState extends State<TodoListPage> {
                       trailing: IconButton(
                         icon: Icon(Icons.delete),
                         onPressed: () {
-                          _deleteTodoItem(todo.id);
+                          _deleteTodoItem(todo.username);
                         },
                       ),
                     );
@@ -101,12 +100,16 @@ class _TodoListPageState extends State<TodoListPage> {
   // Method to add a new To-Do item
   void _addTodoItem() {
     if (_todoController.text.isNotEmpty) {
-      final newTodo = TodoItem(
-        id: '', // Firestore will generate the ID
-        title: _todoController.text.trim(),
-      );
-      _firestoreService.addTodoItem(newTodo);
-      _todoController.clear();
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final newTodo = TodoItem(
+          username: user.displayName ?? 'default', // Firestore will generate the ID
+          title: _todoController.text.trim(),
+          uid: user.uid,  // Use the current user's UID
+        );
+        _firestoreService.addTodoItem(newTodo);
+        _todoController.clear();
+      }
     }
   }
 

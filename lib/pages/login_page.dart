@@ -1,68 +1,258 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:study_planner/services/auth_service.dart';
-import 'package:study_planner/services/pigeon_user_details.dart'; // Import the model
-import 'package:study_planner/pages/home_page.dart'; // Import HomePage
+import 'package:study_planner/components/my_textfield.dart';
+import 'package:study_planner/components/my_button.dart';
+import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/dashboard.dart';
+import 'package:study_planner/pages/forgot_pw_page.dart';
+import 'package:study_planner/pages/gemini_ai.dart';
+import 'package:study_planner/pages/home_page.dart';
+import 'package:study_planner/pages/profile_page.dart';
+import 'package:study_planner/pages/register_page.dart';
+import 'package:study_planner/pages/todo_list.dart'; // Import your Register Page here
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
-  _LoginPageState createState() => _LoginPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final AuthService _authService = AuthService();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  // Text editing controllers
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
 
-  Future<void> _login() async {
+  // Sign user in method
+  void signUserIn() async {
+    // Show loading circle
+    showDialog(
+        context: context,
+        builder: (context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        });
+
+    // Try sign in
     try {
-      // Attempt login
-      PigeonUserDetails? userDetails = await _authService.login(
-        _emailController.text,
-        _passwordController.text,
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
       );
 
-      // If login is successful, navigate to HomePage with userDetails
-      if (userDetails != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomePage(userDetails: userDetails),
+      // Pop the loading circle
+      Navigator.pop(context);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BottomNavigation(
+            homePage: HomePage(),
+            todoPage: TodoListPage(),
+            dashboardPage: DashboardPage(),
+            profilePage: ProfilePage(),
+            GeminiPage: ChatScreen(),
+          ), // Ensure LoginPage exists
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      // Pop the loading circle
+      Navigator.pop(context);
+      // Show error message
+      showErrorMessage(e.code);
+    }
+  }
+
+  // Error message to user
+  void showErrorMessage(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.deepPurple,
+          title: Center(
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.toString())));
-    }
+      },
+    );
+  }
+
+  // Go to Register Page
+  void goToRegisterPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            const RegisterPage(), // Ensure RegisterPage exists
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _login,
-              child: const Text('Login'),
-            ),
-          ],
+      backgroundColor: Colors.indigo.shade200, // background color
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 50),
+
+              // Welcome back
+              const Text(
+                'Welcome back, you\'ve been missed',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              /// Email Textfield
+              SizedBox(
+                width: 370,
+                child: TextField(
+                  controller: emailController,
+                  obscureText: false,
+                  decoration: InputDecoration(
+                    hintText: 'Email',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: BorderSide.none, // Default border
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.white, // Border color for enabled state
+                        width: 1, // Border width
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.indigo, // Border color for focused state
+                        width: 1, // Border width
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 15,
+                    ), // Padding inside the text field
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              /// Password textfield
+              SizedBox(
+                width: 370,
+                child: TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: 'Password',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: BorderSide.none, // Default border
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.white, // Border color for enabled state
+                        width: 1, // Border width
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Corner radius
+                      borderSide: const BorderSide(
+                        color: Colors.indigo, // Border color for focused state
+                        width: 1, // Border width
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 15,
+                    ), // Padding inside the text field
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ForgotPasswordPage(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Forgot Password',
+                        style: TextStyle(
+                          color: Colors.indigo,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              // Sign in button
+              MyButton(
+                text: 'Sign in',
+                onTap: signUserIn,
+              ),
+
+              const SizedBox(height: 20),
+
+              // Not a member? Register here
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Not a member?',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: goToRegisterPage,
+                    child: const Text(
+                      'Register now',
+                      style: TextStyle(
+                        color: Colors.indigo,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
