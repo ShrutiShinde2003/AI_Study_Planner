@@ -48,9 +48,9 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(
           builder: (context) => BottomNavigation(
             homePage: HomePage(),
-            todoPage: TodoListPage(),
-            dashboardPage: DashboardPage(),
-            profilePage: ProfilePage(),
+            todoPage: ToDoListPage(subject:'', subjects: [], ),
+            dashboardPage: DashboardPage(),  
+            profilePage: ProfilePage(userId: '',),
             GeminiPage: ChatScreen(),
           ), // Ensure LoginPage exists
         ),

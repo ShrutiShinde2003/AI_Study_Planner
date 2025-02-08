@@ -248,7 +248,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       UserModel userModel = UserModel(
                         uid: uid,
                         userName: userNameController.text.trim(),
-                        email: emailController.text.trim(),
+                        email: emailController.text.trim(), subjects: [],
                       );
 
                       // Add the user data to Firestore using the UID as the document ID
@@ -266,9 +266,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         MaterialPageRoute(
                           builder: (context) => BottomNavigation(
                             homePage: HomePage(),
-                            todoPage: TodoListPage(),
+                            todoPage: ToDoListPage(subjects: [], subject: '',),
                             dashboardPage: DashboardPage(),
-                            profilePage: ProfilePage(),
+                            profilePage: ProfilePage(userId: '',),
                             GeminiPage: ChatScreen(),
                           ), // Ensure LoginPage exists
                         ),

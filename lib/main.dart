@@ -21,21 +21,35 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Check if a user is signed in
-    final user = FirebaseAuth.instance.currentUser;
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: user != null
-          ? BottomNavigation(
-              homePage: HomePage(),
-              todoPage: TodoListPage(),
-              dashboardPage: DashboardPage(),
-              GeminiPage: ChatScreen(),
-              profilePage: ProfilePage(),
-              
-            )
-          : const WelcomePage(), // Replace with your actual login page
+      home: AuthWrapper(), // Handle user authentication
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(), // Listen for auth state changes
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        if (snapshot.hasData && snapshot.data != null) {
+          String userId = snapshot.data!.uid; // Get logged-in user's ID
+          return BottomNavigation(
+            homePage: HomePage(),
+            todoPage: ToDoListPage(subject: '', subjects: []),
+            dashboardPage: DashboardPage(),
+            GeminiPage: ChatScreen(),
+            profilePage: ProfilePage(userId: userId), // Pass userId correctly
+          );
+        } else {
+          return const WelcomePage(); // Show login page if no user is signed in
+        }
+      },
     );
   }
 }
