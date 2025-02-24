@@ -8,13 +8,12 @@ plugins {
 android {
     namespace = "com.example.ai_study_planner"
     compileSdk = 34 // Specify the compile SDK version
-    ndkVersion = "23.1.7779620"  // Use your Flutter NDK version
+    ndkVersion = "28.0.13004108"  // Use your Flutter NDK version
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
+    }          
     kotlinOptions {
         jvmTarget = "17"  // Ensure compatibility with Java 17
     }

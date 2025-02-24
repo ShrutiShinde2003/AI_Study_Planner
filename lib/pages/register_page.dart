@@ -248,7 +248,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       UserModel userModel = UserModel(
                         uid: uid,
                         userName: userNameController.text.trim(),
-                        email: emailController.text.trim(),
+                        email: emailController.text.trim(), subjects: [],
                       );
 
                       // Add the user data to Firestore using the UID as the document ID
@@ -266,9 +266,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         MaterialPageRoute(
                           builder: (context) => BottomNavigation(
                             homePage: HomePage(),
-                            todoPage: TodoListPage(),
+                            todoPage: ToDoListPage(subjects: [], subject: '',),
                             dashboardPage: DashboardPage(),
-                            profilePage: ProfilePage(),
+                            profilePage: ProfilePage(userId: '',),
                             GeminiPage: ChatScreen(),
                           ), // Ensure LoginPage exists
                         ),
@@ -306,7 +306,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 },
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 50),
 
               // Already a member? Login here
               Row(
@@ -314,7 +314,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 children: [
                   Text(
                     'Already a member?',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: Colors.indigo),
                   ),
                   const SizedBox(width: 4),
                   GestureDetector(
@@ -322,7 +322,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: const Text(
                       'Login now',
                       style: TextStyle(
-                        color: Colors.indigo,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
