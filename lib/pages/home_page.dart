@@ -1,79 +1,91 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:study_planner/models/user_model.dart';
-import 'package:study_planner/pages/todo_list_page.dart';
-
-FirebaseAuth auth = FirebaseAuth.instance;
-FirebaseFirestore firestore = FirebaseFirestore.instance;
-final userId = auth.currentUser?.uid;
-
-Future<UserModel?> fetchData() async {
-  final userInfoQuery = firestore.collection('users').doc(userId).get();
-
-  try {
-    final userDoc = await userInfoQuery;
-    if (userDoc.exists) {
-      final userData = UserModel.fromDocumentSnapshot(userDoc);
-      return userData;
-    } else {
-      return null;
-    }
-  } catch (error) {
-    print('Error fetching user data: $error');
-    return null;
-  }
-}
+import 'package:study_planner/components/my_button.dart';
+import 'package:study_planner/pages/login_page.dart';
+import 'package:study_planner/pages/todo_list.dart'; // Import TodoListPage
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+   HomePage({super.key});
+
+  final user = FirebaseAuth.instance.currentUser!;
+
+  CollectionReference ref = FirebaseFirestore.instance.collection('users');
+
+  // Sign user out method
+  void signUserOut(BuildContext context) {
+    FirebaseAuth.instance.signOut();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LoginPage(),
+      ),
+    );
+  }
+
+  // Fetch user data
+  Future<Map<String, dynamic>> fetchUserData() async {
+    try {
+      DocumentSnapshot snapshot = await ref.doc(user.uid).get();
+      if (snapshot.exists) {
+        return snapshot.data() as Map<String, dynamic>;
+      } else {
+        throw Exception("User document does not exist");
+      }
+    } catch (e) {
+      throw Exception("Failed to fetch user data: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home Page'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacementNamed(context, '/login');
-            },
+            onPressed: () => signUserOut(context),
+            icon: Icon(Icons.logout),
           ),
         ],
       ),
-      body: FutureBuilder<UserModel?>(
-        future: fetchData(),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: fetchUserData(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(child: Text('User data not found.'));
-          } else {
-            // User data is successfully fetched
-            UserModel userModel = snapshot.data!;
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Welcome, ${userModel.userName}!'),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => TodoListPage()),
-                      );
-                    },
-                    child: const Text('Go to To-Do List'),
-                  ),
-                ],
-              ),
-            );
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('No data available'));
           }
+
+          final userData = snapshot.data!;
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Welcome, ${userData['userName']}!',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                Text('Email: ${userData['email']}'),
+                SizedBox(height: 20),
+                // MyButton(
+                //   onTap: () {
+                //     // Navigate to ToDo page
+                //     Navigator.push(
+                //       context,
+                //       MaterialPageRoute(
+                //         builder: (context) => TodoListPage(),
+                //       ),
+                //     );
+                //   },
+                //   text: 'Go to ToDo List',
+                // ),
+              ],
+            ),
+          );
         },
       ),
     );
