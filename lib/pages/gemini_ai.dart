@@ -1,6 +1,8 @@
-import 'package:study_planner/config/api_keys.dart';  // Import API key file
+import 'package:study_planner/config/api_keys.dart'; // Import API key file
 import 'package:flutter/material.dart';
 import 'package:study_planner/services/gemini_api_service.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 
 class ChatScreen extends StatefulWidget {
   @override
@@ -17,7 +19,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _geminiApiService = GeminiApiService(ApiKeys.geminiApiKey); // Use API key from external file
+    _geminiApiService = GeminiApiService(ApiKeys.geminiApiKey);
   }
 
   Future<void> sendMessage(String message) async {
@@ -34,6 +36,31 @@ class _ChatScreenState extends State<ChatScreen> {
       _messages.add({"sender": "ai", "text": reply});
       _isLoading = false;
     });
+  }
+
+  Future<void> uploadAndProcessPDF() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if (result != null) {
+      File file = File(result.files.single.path!);
+      setState(() {
+        _messages.add({
+          "sender": "user",
+          "text": "📄 Uploaded a PDF: ${result.files.single.name}"
+        });
+        _isLoading = true;
+      });
+
+      String summary = await _geminiApiService.processPDF(file);
+
+      setState(() {
+        _messages.add({"sender": "ai", "text": "📚 Flashcards:\n$summary"});
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -53,7 +80,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 final message = _messages[index];
                 final isUser = message["sender"] == "user";
                 return Align(
-                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment:
+                      isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     padding: EdgeInsets.all(12),
                     margin: EdgeInsets.symmetric(vertical: 4),
@@ -70,6 +98,18 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
+          if (_isLoading)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 10),
+                  Text("Processing...", style: TextStyle(fontSize: 16)),
+                ],
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
@@ -84,18 +124,21 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 SizedBox(width: 10),
-                _isLoading
-                    ? CircularProgressIndicator()
-                    : IconButton(
-                        icon: Icon(Icons.send, color: Colors.blue),
-                        onPressed: () {
-                          final userMessage = _controller.text.trim();
-                          if (userMessage.isNotEmpty) {
-                            sendMessage(userMessage);
-                            _controller.clear();
-                          }
-                        },
-                      ),
+                IconButton(
+                  icon: Icon(Icons.upload_file, color: Colors.green, size: 28),
+                  onPressed: uploadAndProcessPDF,
+                ),
+                SizedBox(width: 10),
+                IconButton(
+                  icon: Icon(Icons.send, color: Colors.blue, size: 28),
+                  onPressed: () {
+                    final userMessage = _controller.text.trim();
+                    if (userMessage.isNotEmpty) {
+                      sendMessage(userMessage);
+                      _controller.clear();
+                    }
+                  },
+                ),
               ],
             ),
           ),
