@@ -1,97 +1,85 @@
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:study_planner/models/task_item.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:study_planner/models/task_model.dart';
+import 'package:study_planner/pages/todo_list.dart';
 
-// class FirestoreService {
-//   final FirebaseFirestore _db = FirebaseFirestore.instance;
-//   final FirebaseAuth _auth = FirebaseAuth.instance;
+class FirestoreService {
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-//   // Reference to the global To-Do collection (not inside user subcollection)
-//   CollectionReference get _todoCollection => _db.collection('tasks');
+  CollectionReference get _taskCollection => _db.collection('tasks');
 
-//   // Get To-Do List stream for the current user
-//   Stream<List<TodoItem>> getTodoList() {
-//     final user = _auth.currentUser;
-//     if (user != null) {
-//       return _todoCollection
-//           .where('uid', isEqualTo: user.uid) // Fetch tasks for the current user
-//           .snapshots()
-//           .map((snapshot) {
-//         return snapshot.docs
-//             .map((doc) => TodoItem.fromMap(doc.data() as Map<String, dynamic>, doc.id))
-//             .toList();
-//       });
-//     } else {
-//       return Stream.value([]); // Return empty stream if the user is not authenticated
-//     }
-//   }
+  // 🔹 Get Tasks Stream for Current User
+  Stream<List<TodoItem>> getTodoList() {
+    final user = _auth.currentUser;
+    if (user != null) {
+      return _taskCollection
+          .where('uid', isEqualTo: user.uid)
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs
+            .map((doc) => TodoItem.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+            .toList();
+      });
+    } else {
+      return Stream.value([]);
+    }
+  }
 
-//   // Get To-Do List once for the current user
-//   Future<List<TodoItem>> getTodoListOnce() async {
-//     final user = _auth.currentUser;
-//     if (user != null) {
-//       try {
-//         final snapshot = await _todoCollection
-//             .where('uid', isEqualTo: user.uid)
-//             .get(); // Fetch all documents for the current user
+  // 🔹 Add Task
+  Future<void> addTask(String subject, String taskName, String description, DateTime dueDate) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      try {
+        await _taskCollection.add({
+          'uid': user.uid,          // Store User ID (Ensure consistency)
+          'subjectName': subject,   // Subject Name
+          'taskName': taskName,     // Task Name
+          'description': description, // Task Description
+          'dueDate': dueDate.toIso8601String(), // Convert Date to String
+          'isCompleted': false, // Default: Task is Pending
+          'createdAt': FieldValue.serverTimestamp(), // Auto-generated Timestamp
+        });
 
-//         return snapshot.docs
-//             .map((doc) => TodoItem.fromMap(doc.data() as Map<String, dynamic>, doc.id))
-//             .toList();
-//       } catch (e) {
-//         print('Error fetching To-Do list: $e');
-//         rethrow;
-//       }
-//     } else {
-//       throw Exception("User is not authenticated");
-//     }
-//   }
+        print("✅ Task added successfully!");
+      } catch (e) {
+        print("❌ Error adding task: $e");
+        rethrow;
+      }
+    } else {
+      throw Exception("User is not authenticated");
+    }
+  }
 
-//   // Add To-Do item
-//   Future<void> addTodoItem(TodoItem todo) async {
-//     final user = _auth.currentUser;
-//     if (user != null) {
-//       try {
-//         await _todoCollection.add({
-//           ...todo.toMap(), // Spread the map from TodoItem
-//           'uid': user.uid, // Store the UID for user-specific data
-//         });
-//       } catch (e) {
-//         print('Error adding To-Do item: $e');
-//         rethrow;
-//       }
-//     } else {
-//       throw Exception("User is not authenticated");
-//     }
-//   }
+  // 🔹 Update Task (Mark as Completed or Edit Details)
+  Future<void> updateTask(String taskId, Map<String, dynamic> updatedData) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      try {
+        await _taskCollection.doc(taskId).update(updatedData);
+        print("✅ Task updated successfully!");
+      } catch (e) {
+        print("❌ Error updating task: $e");
+        rethrow;
+      }
+    } else {
+      throw Exception("User is not authenticated");
+    }
+  }
 
-//   // Update To-Do item
-//   Future<void> updateTodoItem(TodoItem todo) async {
-//     final user = _auth.currentUser;
-//     if (user != null) {
-//       try {
-//         await _todoCollection.doc(todo.username).update(todo.toMap());
-//       } catch (e) {
-//         print('Error updating To-Do item: $e');
-//         rethrow;
-//       }
-//     } else {
-//       throw Exception("User is not authenticated");
-//     }
-//   }
-
-//   // Delete To-Do item
-//   Future<void> deleteTodoItem(String todoId) async {
-//     final user = _auth.currentUser;
-//     if (user != null) {
-//       try {
-//         await _todoCollection.doc(todoId).delete();
-//       } catch (e) {
-//         print('Error deleting To-Do item: $e');
-//         rethrow;
-//       }
-//     } else {
-//       throw Exception("User is not authenticated");
-//     }
-//   }
-// }
+  // 🔹 Delete Task
+  Future<void> deleteTask(String taskId) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      try {
+        await _taskCollection.doc(taskId).delete();
+        print("✅ Task deleted successfully!");
+      } catch (e) {
+        print("❌ Error deleting task: $e");
+        rethrow;
+      }
+    } else {
+      throw Exception("User is not authenticated");
+    }
+  }
+}

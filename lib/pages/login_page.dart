@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:study_planner/components/my_textfield.dart';
 import 'package:study_planner/components/my_button.dart';
-import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/bottom_navigation.dart';
 import 'package:study_planner/pages/dashboard.dart';
 import 'package:study_planner/pages/forgot_pw_page.dart';
 import 'package:study_planner/pages/gemini_ai.dart';
@@ -48,7 +48,7 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(
           builder: (context) => BottomNavigation(
             homePage: HomePage(),
-            todoPage: ToDoListPage(subject:'', subjects: [], ),
+             todoPage: ToDoListPage(subjects: [], subject: ''), // ✅ Fix here
             dashboardPage: DashboardPage(),  
             profilePage: ProfilePage(userId: '',),
             GeminiPage: ChatScreen(),

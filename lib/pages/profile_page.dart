@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:study_planner/pages/todo_list.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'todo_list.dart';
 
 class ProfilePage extends StatefulWidget {
-  final String userId; // Accept userId
+  final String userId;
 
   ProfilePage({required this.userId});
 
@@ -12,150 +13,131 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  List<String> subjects = []; // List to store subjects
-  TextEditingController subjectController = TextEditingController();
+  final TextEditingController _subjectController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  List<String> subjects = [];
 
   @override
   void initState() {
     super.initState();
-    fetchSubjects(); // Load subjects from Firestore
+    fetchSubjects(); // 🔹 Load subjects when Profile Page opens
   }
 
-  // Function to fetch subjects from Firestore
+  // 🔹 Fetch subjects from Firestore
   void fetchSubjects() async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.userId)
-        .get();
+    String userId = _auth.currentUser!.uid;
+    DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
 
-    if (userDoc.exists) {
+    if (userDoc.exists && userDoc.data() != null) {
       setState(() {
-        subjects = List<String>.from(userDoc['subjects'] ?? []);
+        subjects = List<String>.from((userDoc.data() as Map<String, dynamic>)['subjects'] ?? []);
       });
     }
   }
 
-  // Function to add a new subject to Firestore
-  void addSubject() async {
-    if (subjectController.text.isNotEmpty) {
-      setState(() {
-        subjects.add(subjectController.text);
+  // 🔹 Add new subject to Firestore
+  void _addSubject() async {
+    String userId = _auth.currentUser!.uid;
+    String subject = _subjectController.text.trim();
+
+    if (subject.isNotEmpty) {
+      DocumentReference userDoc = _firestore.collection('users').doc(userId);
+      await userDoc.update({
+        'subjects': FieldValue.arrayUnion([subject])
       });
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.userId)
-          .update({'subjects': subjects}); // Update Firestore
-
-      subjectController.clear();
+      _subjectController.clear();
+      fetchSubjects(); // 🔹 Refresh the subjects list after adding
     }
   }
 
-  // Function to edit a subject in Firestore
-  void editSubject(int index) {
-    subjectController.text = subjects[index];
+  // 🔹 Delete a subject & its tasks
+  void _deleteSubject(String subject) async {
+    String userId = _auth.currentUser!.uid;
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Edit Subject"),
-          content: TextField(
-            controller: subjectController,
-            decoration: InputDecoration(hintText: "Enter subject name"),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                setState(() {
-                  subjects[index] = subjectController.text;
-                });
+    try {
+      // ✅ Delete all tasks related to this subject first
+      QuerySnapshot tasksSnapshot = await _firestore
+          .collection('tasks')
+          .where('uid', isEqualTo: userId)
+          .where('subjectName', isEqualTo: subject)
+          .get();
 
-                await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(widget.userId)
-                    .update({'subjects': subjects}); // Update Firestore
+      for (var doc in tasksSnapshot.docs) {
+        await doc.reference.delete(); // 🔥 Delete each task
+      }
 
-                subjectController.clear();
-                Navigator.pop(context);
-              },
-              child: Text("Save"),
-            ),
-          ],
-        );
-      },
-    );
-  }
+      // ✅ Now delete the subject from the user’s subject list
+      DocumentReference userDoc = _firestore.collection('users').doc(userId);
+      await userDoc.update({
+        'subjects': FieldValue.arrayRemove([subject]) // Remove subject
+      });
 
-  // Function to delete a subject from Firestore
-  void deleteSubject(int index) async {
-    setState(() {
-      subjects.removeAt(index);
-    });
-
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.userId)
-        .update({'subjects': subjects}); // Update Firestore
+      fetchSubjects(); // 🔹 Refresh list after deleting
+      print("✅ Subject '$subject' and all its tasks deleted!");
+    } catch (e) {
+      print("❌ Error deleting subject and tasks: $e");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Profile - Subjects")),
+      appBar: AppBar(title: Text("Profile")),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16),
         child: Column(
           children: [
             TextField(
-              controller: subjectController,
+              controller: _subjectController,
               decoration: InputDecoration(
-                labelText: "Enter Subject",
+                labelText: "Add Subject",
                 suffixIcon: IconButton(
                   icon: Icon(Icons.add),
-                  onPressed: addSubject,
+                  onPressed: _addSubject,
                 ),
               ),
             ),
             SizedBox(height: 20),
+
+            // 🔹 Display Subjects List
             Expanded(
-              child: ListView.builder(
-                itemCount: subjects.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(subjects[index]),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => editSubject(index),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => deleteSubject(index),
-                        ),
-                      ],
+              child: subjects.isEmpty
+                  ? Center(child: Text("No subjects added yet"))
+                  : ListView.builder(
+                      itemCount: subjects.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Text(subjects[index]),
+                          trailing: IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _deleteSubject(subjects[index]),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
+
             SizedBox(height: 20),
+
+            // 🔹 Go to To-Do List Button
             ElevatedButton(
-              onPressed: () {
-                if (subjects.isNotEmpty) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ToDoListPage(subjects: subjects, subject: ''),
+              onPressed: () async {
+                String userId = FirebaseAuth.instance.currentUser!.uid;
+
+                DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+                List<String> subjects = List<String>.from(userDoc['subjects'] ?? []);
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ToDoListPage(
+                      subjects: subjects,
+                      subject: subjects.isNotEmpty ? subjects[0] : '',
                     ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Please add at least one subject!")),
-                  );
-                }
+                  ),
+                );
               },
               child: Text("Go to To-Do List"),
             ),
