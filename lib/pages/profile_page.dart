@@ -19,22 +19,30 @@ class _ProfilePageState extends State<ProfilePage> {
   List<String> subjects = [];
 
   @override
-  void initState() {
-    super.initState();
-    fetchSubjects(); // 🔹 Load subjects when Profile Page opens
+void initState() {
+  super.initState();
+  fetchSubjects(); // ✅ Load subjects when Profile Page opens
+}
+
+void fetchSubjects() async {
+  String userId = _auth.currentUser?.uid ?? '';
+
+  if (userId.isEmpty) {
+    print("❌ No user logged in.");
+    return;
   }
 
-  // 🔹 Fetch subjects from Firestore
-  void fetchSubjects() async {
-    String userId = _auth.currentUser!.uid;
-    DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+  DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
 
-    if (userDoc.exists && userDoc.data() != null) {
-      setState(() {
-        subjects = List<String>.from((userDoc.data() as Map<String, dynamic>)['subjects'] ?? []);
-      });
-    }
+  if (userDoc.exists && userDoc.data() != null) {
+    setState(() {
+      subjects = List<String>.from((userDoc.data() as Map<String, dynamic>)['subjects'] ?? []);
+    });
+  } else {
+    print("⚠️ No subjects found in Firestore.");
   }
+}
+
 
   // 🔹 Add new subject to Firestore
   void _addSubject() async {

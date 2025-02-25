@@ -17,6 +17,38 @@ class ToDoListPage extends StatefulWidget {
 class _ToDoListPageState extends State<ToDoListPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  List<Map<String, dynamic>> tasks = []; // Store tasks here
+
+  @override
+  void initState() {
+    super.initState();
+    fetchTasks(); // ✅ Fetch tasks when the To-Do List page opens
+  }
+
+  // 🔹 Fetch all tasks from Firestore
+  void fetchTasks() async {
+    String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    if (userId.isEmpty) {
+      print("❌ No user logged in.");
+      return;
+    }
+
+    QuerySnapshot taskSnapshot = await FirebaseFirestore.instance
+        .collection('tasks')
+        .where('uid', isEqualTo: userId)
+        .orderBy('dueDate', descending: false) // ✅ Keep sorting tasks
+        .get();
+
+    if (taskSnapshot.docs.isNotEmpty) {
+      setState(() {
+        tasks = taskSnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+      });
+      print("📌 Total Tasks Retrieved: ${tasks.length}");
+    } else {
+      print("⚠️ No tasks found in Firestore.");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,52 +89,18 @@ class _ToDoListPageState extends State<ToDoListPage> {
 
           // 🔹 Show ALL Tasks from ALL Subjects
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _firestore
-                  .collection('tasks')
-                  .where('uid',
-                      isEqualTo: _auth
-                          .currentUser!.uid) // 🔹 Get all tasks for the user
-                  .orderBy('dueDate',
-                      descending: false) // 🔹 Sort tasks by due date
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                      child: CircularProgressIndicator()); // 🔹 Show loading
-                }
-
-                if (snapshot.hasError) {
-                  print("❌ Firestore Error: ${snapshot.error}");
-                  return Center(child: Text("Error loading tasks"));
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  print("⚠️ No tasks found!");
-                  return Center(child: Text("No tasks available"));
-                }
-
-                var tasks = snapshot.data!.docs;
-
-                // 🔹 Ensure each task has valid data
-                tasks = tasks.where((task) => task.data() != null).toList();
-
-                print("📌 Total Tasks Retrieved: ${tasks.length}");
-
-                return ListView.builder(
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    var taskDoc = tasks[index];
-                    var taskData = taskDoc.data() as Map<String, dynamic>;
-
-                    return TaskCard(
-                      taskId: taskDoc.id, // ✅ Pass correct task ID
-                      taskData: taskData,
-                    );
-                  },
-                );
-              },
-            ),
+            child: tasks.isEmpty
+                ? Center(child: Text("No tasks available")) // ✅ Show message if no tasks
+                : ListView.builder(
+                    itemCount: tasks.length,
+                    itemBuilder: (context, index) {
+                      var taskData = tasks[index];
+                      return TaskCard(
+                        taskId: taskData['taskId'] ?? '',
+                        taskData: taskData,
+                      );
+                    },
+                  ),
           ),
         ],
       ),
