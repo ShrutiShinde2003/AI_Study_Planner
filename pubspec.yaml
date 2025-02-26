@@ -42,11 +42,14 @@ dependencies:
   gemini: 
   google_generative_ai:
   intl:
+  cupertino_icons:
+  file_picker: 
+  syncfusion_flutter_pdf: 
+
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
   #gemini: ^2.1.1
 
 dev_dependencies:
