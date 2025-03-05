@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:study_planner/components/my_textfield.dart';
 import 'package:study_planner/components/my_button.dart';
 import 'package:study_planner/models/user_model.dart';
 import 'package:study_planner/pages/bottom_navigation.dart';

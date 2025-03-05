@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'todo_list.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -13,38 +17,54 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final TextEditingController _subjectController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  final TextEditingController _subjectController = TextEditingController();
+
+  String userName = "";
+  String email = "";
+  String profileImagePath = "";
   List<String> subjects = [];
 
   @override
-void initState() {
-  super.initState();
-  fetchSubjects(); // ✅ Load subjects when Profile Page opens
-}
-
-void fetchSubjects() async {
-  String userId = _auth.currentUser?.uid ?? '';
-
-  if (userId.isEmpty) {
-    print("❌ No user logged in.");
-    return;
+  void initState() {
+    super.initState();
+    fetchUserData();
+    loadProfileImage();
+    fetchSubjects();
   }
 
-  DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+  // 🔹 Fetch User Data (Name & Email)
+  void fetchUserData() async {
+    String userId = _auth.currentUser?.uid ?? '';
+    if (userId.isEmpty) return;
 
-  if (userDoc.exists && userDoc.data() != null) {
-    setState(() {
-      subjects = List<String>.from((userDoc.data() as Map<String, dynamic>)['subjects'] ?? []);
-    });
-  } else {
-    print("⚠️ No subjects found in Firestore.");
+    DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+
+    if (userDoc.exists) {
+      setState(() {
+        userName = userDoc['userName'] ?? 'No Name';
+        email = userDoc['email'] ?? 'No Email';
+      });
+    }
   }
-}
 
+  // 🔹 Fetch Subjects from Firestore
+  void fetchSubjects() async {
+    String userId = _auth.currentUser?.uid ?? '';
+    if (userId.isEmpty) return;
 
-  // 🔹 Add new subject to Firestore
+    DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+
+    if (userDoc.exists && userDoc.data() != null) {
+      setState(() {
+        subjects = List<String>.from((userDoc.data() as Map<String, dynamic>)['subjects'] ?? []);
+      });
+    }
+  }
+
+  // 🔹 Add Subject to Firestore
   void _addSubject() async {
     String userId = _auth.currentUser!.uid;
     String subject = _subjectController.text.trim();
@@ -56,16 +76,16 @@ void fetchSubjects() async {
       });
 
       _subjectController.clear();
-      fetchSubjects(); // 🔹 Refresh the subjects list after adding
+      fetchSubjects(); // Refresh the list
     }
   }
 
-  // 🔹 Delete a subject & its tasks
+  // 🔹 Delete Subject & Its Tasks
   void _deleteSubject(String subject) async {
     String userId = _auth.currentUser!.uid;
 
     try {
-      // ✅ Delete all tasks related to this subject first
+      // Delete tasks related to this subject
       QuerySnapshot tasksSnapshot = await _firestore
           .collection('tasks')
           .where('uid', isEqualTo: userId)
@@ -73,20 +93,93 @@ void fetchSubjects() async {
           .get();
 
       for (var doc in tasksSnapshot.docs) {
-        await doc.reference.delete(); // 🔥 Delete each task
+        await doc.reference.delete();
       }
 
-      // ✅ Now delete the subject from the user’s subject list
+      // Remove subject from user's list
       DocumentReference userDoc = _firestore.collection('users').doc(userId);
       await userDoc.update({
-        'subjects': FieldValue.arrayRemove([subject]) // Remove subject
+        'subjects': FieldValue.arrayRemove([subject])
       });
 
-      fetchSubjects(); // 🔹 Refresh list after deleting
-      print("✅ Subject '$subject' and all its tasks deleted!");
+      fetchSubjects(); // Refresh list
     } catch (e) {
-      print("❌ Error deleting subject and tasks: $e");
+      print("❌ Error deleting subject: $e");
     }
+  }
+
+  // 🔹 Show Avatar & Gallery Upload Options
+  void _showImagePicker() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.person),
+              title: Text("Male Avatar"),
+              onTap: () => _setLocalAvatar("assets/male_avatar.png"),
+            ),
+            ListTile(
+              leading: Icon(Icons.person_outline),
+              title: Text("Female Avatar"),
+              onTap: () => _setLocalAvatar("assets/female_avatar.png"),
+            ),
+            ListTile(
+              leading: Icon(Icons.photo),
+              title: Text("Upload from Gallery"),
+              onTap: _pickImageFromGallery,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 🔹 Set Local Avatar
+  void _setLocalAvatar(String imagePath) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('profileImagePath', imagePath);
+    setState(() {
+      profileImagePath = imagePath;
+    });
+    Navigator.pop(context);
+  }
+
+  // 🔹 Pick Image from Gallery
+  Future<void> _pickImageFromGallery() async {
+    Navigator.pop(context);
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      File imageFile = File(pickedFile.path);
+      _saveImageLocally(imageFile);
+    }
+  }
+
+  // 🔹 Save Image in Local Storage
+  Future<void> _saveImageLocally(File imageFile) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final localImagePath = '${directory.path}/profile_image.jpg';
+
+    await imageFile.copy(localImagePath);
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('profileImagePath', localImagePath);
+
+    setState(() {
+      profileImagePath = localImagePath;
+    });
+  }
+
+  // 🔹 Load Profile Image from Storage
+  Future<void> loadProfileImage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      profileImagePath = prefs.getString('profileImagePath') ?? '';
+    });
   }
 
   @override
@@ -97,6 +190,30 @@ void fetchSubjects() async {
         padding: EdgeInsets.all(16),
         child: Column(
           children: [
+            // Profile Image
+            GestureDetector(
+              onTap: _showImagePicker,
+              child: CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.grey.shade300,
+                backgroundImage: profileImagePath.isNotEmpty
+                    ? (profileImagePath.contains("assets/")
+                        ? AssetImage(profileImagePath) as ImageProvider
+                        : FileImage(File(profileImagePath)))
+                    : null,
+                child: profileImagePath.isEmpty
+                    ? Icon(Icons.add, size: 40, color: Colors.white)
+                    : null,
+              ),
+            ),
+            SizedBox(height: 10),
+
+            // User Info
+            Text(userName, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(email, style: TextStyle(fontSize: 16, color: Colors.grey)),
+            SizedBox(height: 20),
+
+            // Subject Input Field
             TextField(
               controller: _subjectController,
               decoration: InputDecoration(
@@ -109,7 +226,7 @@ void fetchSubjects() async {
             ),
             SizedBox(height: 20),
 
-            // 🔹 Display Subjects List
+            // Subjects List
             Expanded(
               child: subjects.isEmpty
                   ? Center(child: Text("No subjects added yet"))
@@ -126,15 +243,14 @@ void fetchSubjects() async {
                       },
                     ),
             ),
-
             SizedBox(height: 20),
 
-            // 🔹 Go to To-Do List Button
+            // To-Do List Button
             ElevatedButton(
               onPressed: () async {
                 String userId = FirebaseAuth.instance.currentUser!.uid;
-
-                DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+                DocumentSnapshot userDoc =
+                    await FirebaseFirestore.instance.collection('users').doc(userId).get();
                 List<String> subjects = List<String>.from(userDoc['subjects'] ?? []);
 
                 Navigator.push(
