@@ -40,12 +40,13 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        actions: [
-          IconButton(
-            onPressed: () => signUserOut(context),
-            icon: Icon(Icons.logout),
-          ),
-        ],
+        automaticallyImplyLeading: false,  // 🚀 Removes the back button
+        // actions: [
+        //   IconButton(
+        //     onPressed: () => signUserOut(context),
+        //     icon: Icon(Icons.logout),
+        //   ),
+        // ],
       ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: fetchUserData(),

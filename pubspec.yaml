@@ -30,11 +30,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  path_provider_android:
-  http:
   firebase_core:
   cloud_firestore:
   firebase_auth:
+  path_provider_android:
+  http:
   flutter_local_notifications:
   shared_preferences:
   google_fonts:

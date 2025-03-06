@@ -21,7 +21,9 @@ class _ToDoListPageState extends State<ToDoListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("To-Do List")),
+      appBar: AppBar(title: Text("To-Do List"),
+      automaticallyImplyLeading: false,  // 🚀 Removes the back button
+      ),
       body: Column(
         children: [
           // 🔹 Show Subjects at the Top (Click to Open NotesPage)

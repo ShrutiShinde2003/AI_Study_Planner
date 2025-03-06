@@ -48,7 +48,9 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Dashboard')),
+      appBar: AppBar(title: Text('Dashboard'),
+      automaticallyImplyLeading: false,  // 🚀 Removes the back button
+      ),
       body: SingleChildScrollView(
         // ✅ Fixes layout issues
         child: Padding(
