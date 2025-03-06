@@ -1,10 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:study_planner/components/my_textfield.dart';
 import 'package:study_planner/components/my_button.dart';
 import 'package:study_planner/models/user_model.dart';
-import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/bottom_navigation.dart';
 import 'package:study_planner/pages/dashboard.dart';
 import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
@@ -306,7 +305,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 },
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 50),
 
               // Already a member? Login here
               Row(
@@ -314,7 +313,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 children: [
                   Text(
                     'Already a member?',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: Colors.indigo),
                   ),
                   const SizedBox(width: 4),
                   GestureDetector(
@@ -322,7 +321,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: const Text(
                       'Login now',
                       style: TextStyle(
-                        color: Colors.indigo,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

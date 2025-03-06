@@ -1,15 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:study_planner/components/my_textfield.dart';
 import 'package:study_planner/components/my_button.dart';
-import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/bottom_navigation.dart';
 import 'package:study_planner/pages/dashboard.dart';
 import 'package:study_planner/pages/forgot_pw_page.dart';
 import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
 import 'package:study_planner/pages/profile_page.dart';
 import 'package:study_planner/pages/register_page.dart';
-import 'package:study_planner/pages/todo_list.dart'; // Import your Register Page here
+import 'package:study_planner/pages/todo_list.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -48,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(
           builder: (context) => BottomNavigation(
             homePage: HomePage(),
-            todoPage: ToDoListPage(subject:'', subjects: [], ),
+             todoPage: ToDoListPage(subjects: [], subject: ''), // ✅ Fix here
             dashboardPage: DashboardPage(),  
             profilePage: ProfilePage(userId: '',),
             GeminiPage: ChatScreen(),
@@ -92,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.indigo.shade200, // background color
@@ -219,24 +218,22 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 10),
 
+
               // Sign in button
               MyButton(
                 text: 'Sign in',
                 onTap: signUserIn,
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 50),
 
               // Not a member? Register here
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'Not a member?',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: Colors.indigo),
                   ),
                   const SizedBox(width: 4),
                   GestureDetector(
@@ -244,7 +241,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: const Text(
                       'Register now',
                       style: TextStyle(
-                        color: Colors.indigo,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

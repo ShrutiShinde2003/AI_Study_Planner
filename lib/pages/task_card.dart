@@ -1,84 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../models/task_item.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TaskCard extends StatelessWidget {
-  final TaskModel task;
+  final String taskId;
+  final Map<String, dynamic> taskData;
 
-  TaskCard({required this.task});
+  TaskCard({required this.taskId, required this.taskData});
+
+  void _toggleTaskCompletion(String taskId, bool currentStatus) {
+    if (taskId.isEmpty) {
+      print("❌ Error: Task ID is empty!");
+      return;
+    }
+
+    FirebaseFirestore.instance.collection('tasks').doc(taskId).update({
+      'isCompleted': !currentStatus, // Toggle status
+    }).then((_) {
+      print("✅ Task status updated!");
+    }).catchError((error) {
+      print("❌ Error updating task: $error");
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    bool isCompleted = taskData['isCompleted'] ?? false;
+
     return Card(
-      elevation: 4,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+      margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: ListTile(
+        contentPadding: EdgeInsets.all(10),
+        title: Text(
+          taskData['taskName'] ?? "No Task Name",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            decoration: isCompleted ? TextDecoration.lineThrough : null, // Strike-through if completed
+          ),
+        ),
+        subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              task.task,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueAccent,
-              ),
-            ),
-            SizedBox(height: 8),
-
-            Text(
-              "Subject: ${task.subject}",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            SizedBox(height: 4),
-
-            Text(
-              "Description: ${task.description}",
-              style: TextStyle(fontSize: 14, color: Colors.black87),
-            ),
-            SizedBox(height: 8),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today, size: 16, color: Colors.red),
-                    SizedBox(width: 5),
-                    Text(
-                      "Due: ${task.dueDate}",
-                      style: TextStyle(fontSize: 14, color: Colors.red),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: task.status == "completed" ? Colors.green : Colors.orange,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    task.status.toUpperCase(),
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8),
-
-            Row(
-              children: [
-                Icon(Icons.access_time, size: 16, color: Colors.grey),
-                SizedBox(width: 5),
-                Text(
-                  "Created: ${DateFormat('yyyy-MM-dd HH:mm').format(task.timeCreated)}",
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
+            Text("Subject: ${taskData['subjectName'] ?? 'Unknown'}"),
+            Text("Due: ${taskData['dueDate'] ?? 'No Date'}"),
           ],
+        ),
+        trailing: Checkbox(
+          value: isCompleted,
+          onChanged: (value) {
+            _toggleTaskCompletion(taskId, isCompleted);
+          },
         ),
       ),
     );

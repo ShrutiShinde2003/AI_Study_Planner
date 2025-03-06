@@ -1,11 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/task_item.dart';
+import '../services/firestore_service(tasks).dart';
 
 class NotesPage extends StatefulWidget {
   final String subject;
-
   NotesPage({required this.subject});
 
   @override
@@ -13,73 +10,67 @@ class NotesPage extends StatefulWidget {
 }
 
 class _NotesPageState extends State<NotesPage> {
-  TextEditingController taskController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
-  TextEditingController dueDateController = TextEditingController();
+  final TextEditingController _taskNameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  DateTime? _selectedDueDate;
+  final FirestoreService _firestoreService = FirestoreService(); // 🔹 FirestoreService Instance
 
-  final FirebaseAuth auth = FirebaseAuth.instance;
-  CollectionReference ref = FirebaseFirestore.instance.collection('tasks');
-
-  void addTaskToFirebase() async {
-    if (taskController.text.isNotEmpty &&
-        descriptionController.text.isNotEmpty &&
-        dueDateController.text.isNotEmpty) {
-      final user = auth.currentUser!;
-      String uid = user.uid;
-
-      TaskModel newTask = TaskModel(
-        uid: uid,
-        subject: widget.subject,
-        task: taskController.text.trim(),
-        description: descriptionController.text.trim(),
-        dueDate: dueDateController.text.trim(),
-        timeCreated: DateTime.now(),
+  void _addTask() async {
+    if (_taskNameController.text.isEmpty || _selectedDueDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please fill in all fields")),
       );
-
-      await ref.add(newTask.toMap()).then((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Task Added Successfully!")),
-        );
-        Navigator.pop(context); // Go back to To-Do List page after adding task
-      }).catchError((error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error adding task: $error")),
-        );
-      });
+      return;
     }
+
+    await _firestoreService.addTask(
+      widget.subject,
+      _taskNameController.text,
+      _descriptionController.text,
+      _selectedDueDate!,
+    );
+
+    Navigator.pop(context); // 🔹 Go back to To-Do List after adding the task
   }
 
+  // 🔹 UI for Task Adding
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Add Task for ${widget.subject}")),
+      appBar: AppBar(title: Text("Add Task - ${widget.subject}")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              controller: taskController,
-              decoration: InputDecoration(labelText: "Enter Task"),
-            ),
-            TextField(
-              controller: descriptionController,
-              decoration: InputDecoration(labelText: "Enter Description"),
-            ),
-            TextField(
-              controller: dueDateController,
-              decoration: InputDecoration(
-                labelText: "Enter Due Date",
-                suffixIcon: Icon(Icons.calendar_today),
-              ),
+            TextField(controller: _taskNameController, decoration: InputDecoration(labelText: "Task Name")),
+            TextField(controller: _descriptionController, decoration: InputDecoration(labelText: "Description")),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () => _selectDate(context),
+              child: Text(_selectedDueDate == null ? "Select Due Date" : "Due: ${_selectedDueDate!.toLocal()}"),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: addTaskToFirebase,
+              onPressed: _addTask,
               child: Text("Add Task"),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _selectedDueDate) {
+      setState(() {
+        _selectedDueDate = picked;
+      });
+    }
   }
 }

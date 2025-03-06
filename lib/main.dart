@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/bottom_navigation.dart';
 import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
 import 'package:study_planner/pages/login_page.dart';
@@ -44,7 +44,7 @@ class AuthWrapper extends StatelessWidget {
             todoPage: ToDoListPage(subject: '', subjects: []),
             dashboardPage: DashboardPage(),
             GeminiPage: ChatScreen(),
-            profilePage: ProfilePage(userId: userId), // Pass userId correctly
+            profilePage:ProfilePage(userId: '',)
           );
         } else {
           return const WelcomePage(); // Show login page if no user is signed in
