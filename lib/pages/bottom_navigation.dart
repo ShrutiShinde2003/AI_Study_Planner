@@ -60,7 +60,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
   Widget build(BuildContext context) {
     final List<Widget> _pages = [
       widget.homePage,
-      ToDoListPage(subjects: subjects), // ✅ Now passing updated subjects
+      ToDoListPage(), // ✅ Now passing updated subjects
       widget.dashboardPage,
       widget.GeminiPage,
       widget.profilePage,

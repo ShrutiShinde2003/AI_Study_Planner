@@ -265,7 +265,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         MaterialPageRoute(
                           builder: (context) => BottomNavigation(
                             homePage: HomePage(),
-                            todoPage: ToDoListPage(subjects: []), // ✅ FIXED
+                            todoPage: ToDoListPage(), // ✅ FIXED
                             dashboardPage: DashboardPage(),
                             profilePage: ProfilePage(userId: '',),
                             GeminiPage: ChatScreen(),

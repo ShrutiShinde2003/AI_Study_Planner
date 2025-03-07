@@ -34,13 +34,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       setState(() {
         _nameController.text = userDoc['userName'] ?? '';
         _emailController.text = userDoc['email'] ?? '';
+        profileImagePath = userDoc['profileImage'] ?? ''; // Load Firestore image
       });
     }
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      profileImagePath = prefs.getString('profileImagePath') ?? '';
-    });
   }
 
   // 🔹 Show Avatar & Gallery Upload Options
@@ -122,75 +118,76 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   // 🔹 Save Updated User Profile
- void saveProfile() async {
-  String userId = _auth.currentUser?.uid ?? '';
-  if (userId.isEmpty) return;
+  void saveProfile() async {
+    String userId = _auth.currentUser?.uid ?? '';
+    if (userId.isEmpty) return;
 
-  try {
-    await _firestore.collection('users').doc(userId).update({
-      'userName': _nameController.text,
-      'email': _emailController.text,
-    });
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'userName': _nameController.text,
+        'email': _emailController.text,
+      });
 
-    if (_passwordController.text.isNotEmpty) {
-      User? user = _auth.currentUser;
-      
-      // 🔹 Prompt user for their current password before updating
-      String? currentPassword = await showDialog<String>(
-        context: context,
-        builder: (context) {
-          TextEditingController passwordController = TextEditingController();
-          return AlertDialog(
-            title: Text("Enter Current Password"),
-            content: TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(hintText: "Current Password"),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, null),
-                child: Text("Cancel"),
+      if (_passwordController.text.isNotEmpty) {
+        User? user = _auth.currentUser;
+
+        // 🔹 Prompt user for their current password before updating
+        String? currentPassword = await showDialog<String>(
+          context: context,
+          builder: (context) {
+            TextEditingController passwordController = TextEditingController();
+            return AlertDialog(
+              title: Text("Enter Current Password"),
+              content: TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(hintText: "Current Password"),
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, passwordController.text),
-                child: Text("Confirm"),
-              ),
-            ],
-          );
-        },
-      );
-
-      if (currentPassword == null || currentPassword.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Password update canceled")),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, null),
+                  child: Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, passwordController.text),
+                  child: Text("Confirm"),
+                ),
+              ],
+            );
+          },
         );
-        return;
+
+        if (currentPassword == null || currentPassword.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Password update canceled")),
+          );
+          return;
+        }
+
+        // 🔹 Re-authenticate with the provided old password
+        AuthCredential credential = EmailAuthProvider.credential(
+          email: user!.email!,
+          password: currentPassword,
+        );
+
+        await user.reauthenticateWithCredential(credential);
+
+        // Now update the password
+        await user.updatePassword(_passwordController.text);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Password updated successfully!")),
+        );
       }
 
-      // 🔹 Re-authenticate with the provided old password
-      AuthCredential credential = EmailAuthProvider.credential(
-        email: user!.email!,
-        password: currentPassword,
-      );
-
-      await user.reauthenticateWithCredential(credential);
-
-      // Now update the password
-      await user.updatePassword(_passwordController.text);
-
+      // 🔹 Return updated image to ProfilePage
+      Navigator.pop(context, profileImagePath);
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Password updated successfully!")),
+        SnackBar(content: Text("Error updating profile: $e")),
       );
     }
-
-    Navigator.pop(context);
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Error updating profile: $e")),
-    );
   }
-}
 
   @override
   Widget build(BuildContext context) {
