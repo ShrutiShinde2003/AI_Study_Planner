@@ -11,6 +11,26 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  List<String> userSubjects = []; // ✅ Stores the user's subjects
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserSubjects(); // ✅ Fetch subjects when Dashboard loads
+  }
+
+  // 🔹 Fetch user's subjects from Firestore
+  Future<void> fetchUserSubjects() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
+    if (userDoc.exists && userDoc.data() != null) {
+      setState(() {
+        userSubjects = List<String>.from((userDoc.data() as Map<String, dynamic>)['subjects'] ?? []);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,9 +59,16 @@ class _DashboardPageState extends State<DashboardPage> {
           Map<String, int> completedTasks = {};
           for (var doc in snapshot.data!.docs) {
             var data = doc.data() as Map<String, dynamic>;
-            String subject = data['subject'] ?? 'Unknown'; // ✅ Fixed field name
 
-            completedTasks[subject] = (completedTasks[subject] ?? 0) + 1;
+            // ✅ Ensure the subject is correctly fetched from Firestore
+            String subject = (data.containsKey('subject') && data['subject'] != null && data['subject'].toString().isNotEmpty)
+                ? data['subject']
+                : 'No Subject'; // 🔹 Prevents "Unknown"
+
+            // ✅ Only show tasks from subjects that still exist in the profile
+            if (userSubjects.contains(subject)) {
+              completedTasks[subject] = (completedTasks[subject] ?? 0) + 1;
+            }
           }
 
           return SingleChildScrollView(
@@ -79,6 +106,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               itemBuilder: (context, index) {
                                 String subject = completedTasks.keys.elementAt(index);
                                 int taskCount = completedTasks[subject]!;
+
                                 return Card(
                                   margin: EdgeInsets.symmetric(vertical: 5),
                                   child: ListTile(

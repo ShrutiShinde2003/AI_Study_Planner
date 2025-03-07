@@ -47,11 +47,11 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(
           builder: (context) => BottomNavigation(
             homePage: HomePage(),
-             todoPage: ToDoListPage(subjects: [], subject: ''), // ✅ Fix here
-            dashboardPage: DashboardPage(),  
-            profilePage: ProfilePage(userId: '',),
+            dashboardPage: DashboardPage(), // ✅ Added missing parameter
+            todoPage: ToDoListPage(subjects: []),
+            profilePage: ProfilePage(userId: ''),
             GeminiPage: ChatScreen(),
-          ), // Ensure LoginPage exists
+          ),
         ),
       );
     } on FirebaseAuthException catch (e) {
@@ -91,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.indigo.shade200, // background color
@@ -217,7 +217,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               const SizedBox(height: 10),
-
 
               // Sign in button
               MyButton(

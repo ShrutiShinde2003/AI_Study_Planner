@@ -3,12 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/task_card.dart';
 import 'notes_page.dart';
+import 'package:intl/intl.dart'; // 🔹 For proper date formatting
 
 class ToDoListPage extends StatefulWidget {
   final List<String> subjects;
-  final String subject;
 
-  ToDoListPage({required this.subjects, required this.subject});
+  ToDoListPage({required this.subjects});
 
   @override
   _ToDoListPageState createState() => _ToDoListPageState();
@@ -44,7 +44,7 @@ class _ToDoListPageState extends State<ToDoListPage> {
         'subjects': FieldValue.arrayRemove([subject])
       });
 
-      await batch.commit(); // Execute batch deletion
+      await batch.commit();
       print("✅ Subject and its tasks deleted successfully");
     } catch (e) {
       print("❌ Error deleting subject: $e");
@@ -54,10 +54,7 @@ class _ToDoListPageState extends State<ToDoListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("To-Do List"),
-        automaticallyImplyLeading: false, // Removes the back button
-      ),
+      appBar: AppBar(title: Text("To-Do List")),
       body: Column(
         children: [
           // 🔹 Show Subjects at the Top (Click to Open NotesPage)
@@ -72,25 +69,19 @@ class _ToDoListPageState extends State<ToDoListPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: GestureDetector(
                         onLongPress: () {
-                          // Show confirmation dialog before deleting
                           showDialog(
                             context: context,
                             builder: (context) => AlertDialog(
                               title: Text("Delete Subject"),
-                              content: Text(
-                                  "Are you sure you want to delete '$subject' and all its tasks?"),
+                              content: Text("Are you sure you want to delete '$subject' and all its tasks?"),
                               actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: Text("Cancel"),
-                                ),
+                                TextButton(onPressed: () => Navigator.pop(context), child: Text("Cancel")),
                                 TextButton(
                                   onPressed: () async {
                                     await deleteSubject(subject);
                                     Navigator.pop(context);
                                   },
-                                  child: Text("Delete",
-                                      style: TextStyle(color: Colors.red)),
+                                  child: Text("Delete", style: TextStyle(color: Colors.red)),
                                 ),
                               ],
                             ),
@@ -101,10 +92,7 @@ class _ToDoListPageState extends State<ToDoListPage> {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    NotesPage(subject: subject),
-                              ),
+                              MaterialPageRoute(builder: (context) => NotesPage(subject: subject)),
                             );
                           },
                         ),
@@ -119,20 +107,18 @@ class _ToDoListPageState extends State<ToDoListPage> {
 
           SizedBox(height: 10),
 
-          // 🔹 Show Tasks for Existing Subjects (REAL-TIME UPDATES)
           Expanded(
             child: widget.subjects.isNotEmpty
                 ? StreamBuilder<QuerySnapshot>(
                     stream: _firestore
                         .collection('tasks')
                         .where('uid', isEqualTo: _auth.currentUser?.uid)
-                        .where('subject', whereIn: widget.subjects) // ✅ Only filter if subjects exist
+                        .where('subject', whereIn: widget.subjects)
                         .orderBy('dueDate', descending: false)
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(
-                            child: CircularProgressIndicator()); // 🔹 Show loading
+                        return Center(child: CircularProgressIndicator());
                       }
 
                       if (snapshot.hasError) {
@@ -154,15 +140,35 @@ class _ToDoListPageState extends State<ToDoListPage> {
                           var taskDoc = tasks[index];
                           var taskData = taskDoc.data() as Map<String, dynamic>;
 
+                          // ✅ Convert Firestore Timestamp to DateTime
+                          DateTime? dueDate;
+                          if (taskData['dueDate'] is Timestamp) {
+                            dueDate = (taskData['dueDate'] as Timestamp).toDate();
+                          } else if (taskData['dueDate'] is String) {
+                            dueDate = DateTime.tryParse(taskData['dueDate']);
+                          }
+
+                          // ✅ Format Date Correctly
+                          String formattedDate = dueDate != null
+                              ? DateFormat('dd MMM yyyy, hh:mm a').format(dueDate)
+                              : 'No Due Date';
+
+                          // ✅ Ensure Subject Name is Not Null
+                          String subjectName = taskData['subject'] ?? 'No Subject';
+
                           return TaskCard(
-                            taskId: taskDoc.id, // ✅ Pass correct task ID
-                            taskData: taskData,
+                            taskId: taskDoc.id,
+                            taskData: {
+                              ...taskData,
+                              'dueDate': formattedDate, // ✅ Pass formatted date
+                              'subject': subjectName, // ✅ Ensures subject is passed correctly
+                            },
                           );
                         },
                       );
                     },
                   )
-                : Center(child: Text("No subjects available")), // ✅ Handles empty subjects case
+                : Center(child: Text("No subjects available")),
           ),
         ],
       ),
