@@ -14,7 +14,8 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = false;
   late GeminiApiService _geminiApiService;
 
-  List<Map<String, String>> _messages = [];
+  final List<Map<String, String>> _messages = [];
+  List<Map<String, String>> _flashcards = [];
 
   @override
   void initState() {
@@ -30,11 +31,12 @@ class _ChatScreenState extends State<ChatScreen> {
       _isLoading = true;
     });
 
-    final reply = await _geminiApiService.sendMessage(message);
+    // Normal AI search instead of flashcard generation
+    final responseText = await _geminiApiService.sendMessage(message);
 
     setState(() {
-      _messages.add({"sender": "ai", "text": reply});
       _isLoading = false;
+      _messages.add({"sender": "ai", "text": responseText});
     });
   }
 
@@ -52,13 +54,23 @@ class _ChatScreenState extends State<ChatScreen> {
           "text": "📄 Uploaded a PDF: ${result.files.single.name}"
         });
         _isLoading = true;
+        _flashcards = []; // Clear previous flashcards before processing
       });
 
-      String summary = await _geminiApiService.processPDF(file);
+      // Process PDF and extract multiple flashcards
+      List<Map<String, String>> flashcards =
+          await _geminiApiService.processPDF(file);
 
       setState(() {
-        _messages.add({"sender": "ai", "text": "📚 Flashcards:\n$summary"});
         _isLoading = false;
+        _flashcards = flashcards.isNotEmpty
+            ? flashcards
+            : [
+                {
+                  "question": "Error",
+                  "answer": "No flashcards were generated from the PDF."
+                }
+              ];
       });
     }
   }
@@ -67,40 +79,85 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Chat with AI"),
+        title: const Text("Chat with AI"),
         backgroundColor: Colors.blueAccent,
       ),
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
+            child: ListView(
               padding: const EdgeInsets.all(16.0),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                final isUser = message["sender"] == "user";
-                return Align(
-                  alignment:
-                      isUser ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    padding: EdgeInsets.all(12),
-                    margin: EdgeInsets.symmetric(vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isUser ? Colors.blue[300] : Colors.grey[300],
-                      borderRadius: BorderRadius.circular(12),
+              children: [
+                // Chat Messages
+                ..._messages.map((message) {
+                  final isUser = message["sender"] == "user";
+                  return Align(
+                    alignment:
+                        isUser ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isUser ? Colors.blue[300] : Colors.grey[300],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        message["text"]!,
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
+                      ),
                     ),
-                    child: Text(
-                      message["text"]!,
-                      style: TextStyle(fontSize: 16, color: Colors.black),
-                    ),
+                  );
+                }),
+
+                // Flashcards Section (Only when a PDF is processed)
+                if (_flashcards.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Generated Flashcards",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
                   ),
-                );
-              },
+                  const SizedBox(height: 10),
+                  Column(
+                    children: _flashcards.map((flashcard) {
+                      return Card(
+                        elevation: 4,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Q: ${flashcard['question']}",
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blueAccent,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "A: ${flashcard['answer']}",
+                                style: const TextStyle(
+                                    fontSize: 16, color: Colors.black),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ]
+              ],
             ),
           ),
           if (_isLoading)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
+            const Padding(
+              padding: EdgeInsets.all(8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -117,20 +174,21 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: "Enter your message",
                       border: OutlineInputBorder(),
                     ),
                   ),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 IconButton(
-                  icon: Icon(Icons.upload_file, color: Colors.green, size: 28),
+                  icon: const Icon(Icons.upload_file,
+                      color: Colors.green, size: 28),
                   onPressed: uploadAndProcessPDF,
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 IconButton(
-                  icon: Icon(Icons.send, color: Colors.blue, size: 28),
+                  icon: const Icon(Icons.send, color: Colors.blue, size: 28),
                   onPressed: () {
                     final userMessage = _controller.text.trim();
                     if (userMessage.isNotEmpty) {
