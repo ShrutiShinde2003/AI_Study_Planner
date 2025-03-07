@@ -4,7 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'settings_page.dart';
-import 'edit_profile_page.dart'; // Ensure this import exists
+import 'edit_profile_page.dart';
+import 'search_users_page.dart';
+import 'followers_page.dart';
+import 'following_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final String userId;
@@ -21,6 +24,8 @@ class _ProfilePageState extends State<ProfilePage> {
   String userName = "";
   String email = "";
   String profileImagePath = "";
+  int followingCount = 0;
+  int followersCount = 0;
   List<String> subjects = [];
   TextEditingController _subjectController = TextEditingController();
 
@@ -41,6 +46,8 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         userName = userDoc['userName'] ?? 'No Name';
         email = userDoc['email'] ?? 'No Email';
+        followingCount = (userDoc['following'] as List?)?.length ?? 0;
+        followersCount = (userDoc['followers'] as List?)?.length ?? 0;
       });
     }
   }
@@ -88,25 +95,24 @@ class _ProfilePageState extends State<ProfilePage> {
             "Deleting this subject will remove all related tasks permanently."),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false), // Cancel
+            onPressed: () => Navigator.pop(context, false),
             child: Text("Cancel"),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true), // Confirm delete
+            onPressed: () => Navigator.pop(context, true),
             child: Text("Delete", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
 
-    // If user cancels, exit the function
     if (confirmDelete == null || !confirmDelete) return;
 
     String userId = _auth.currentUser?.uid ?? '';
     if (userId.isEmpty) return;
 
     setState(() {
-      subjects.remove(subject); // Update UI immediately
+      subjects.remove(subject);
     });
 
     DocumentReference userDocRef = _firestore.collection('users').doc(userId);
@@ -115,7 +121,6 @@ class _ProfilePageState extends State<ProfilePage> {
       'subjects': FieldValue.arrayRemove([subject])
     });
 
-    // Delete all tasks related to this subject
     QuerySnapshot tasksSnapshot = await _firestore
         .collection('tasks')
         .where('userId', isEqualTo: userId)
@@ -134,11 +139,9 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset:
-          true, // ✅ Allows scrolling when keyboard appears
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text("Profile"),
-        automaticallyImplyLeading: false, // 🚀 Removes the back button
         actions: [
           IconButton(
             icon: Icon(Icons.settings),
@@ -152,7 +155,6 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
       body: SingleChildScrollView(
-        // ✅ Prevents overflow
         child: Padding(
           padding: EdgeInsets.all(16),
           child: Column(
@@ -208,15 +210,69 @@ class _ProfilePageState extends State<ProfilePage> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               Text(email, style: TextStyle(fontSize: 16, color: Colors.grey)),
               SizedBox(height: 20),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => FollowersPage()),
+                      );
+                    },
+                    child: Column(
+                      children: [
+                        Text(followersCount.toString(),
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text("Followers", style: TextStyle(fontSize: 16)),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 40),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => FollowingPage()),
+                      );
+                    },
+                    child: Column(
+                      children: [
+                        Text(followingCount.toString(),
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text("Following", style: TextStyle(fontSize: 16)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 20),
+
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SearchUsersPage()),
+                  );
+                },
+                child: Text("Add Friends"),
+              ),
+
+              SizedBox(height: 20),
+
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text("Subjects:",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
               subjects.isEmpty
-                  ? Text("No subjects added",
-                      style: TextStyle(color: Colors.grey))
+                  ? Text("No subjects added", style: TextStyle(color: Colors.grey))
                   : Column(
                       children: subjects.map((subject) {
                         return ListTile(
@@ -229,15 +285,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         );
                       }).toList(),
                     ),
-              SizedBox(height: 10),
               TextField(
                 controller: _subjectController,
-                decoration: InputDecoration(
-                  labelText: "Add Subject",
-                  border: OutlineInputBorder(),
-                ),
+                decoration: InputDecoration(labelText: "Add Subject"),
               ),
-              SizedBox(height: 10),
               ElevatedButton(
                 onPressed: addSubject,
                 child: Text("Add Subject"),
