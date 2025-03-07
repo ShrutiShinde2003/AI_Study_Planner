@@ -2,9 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:study_planner/models/task_model.dart';
 
-// class FirestoreService {
-//   final FirebaseFirestore _db = FirebaseFirestore.instance;
-//   final FirebaseAuth _auth = FirebaseAuth.instance;
+class FirestoreService {
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   CollectionReference get _taskCollection => _db.collection('tasks');
 
