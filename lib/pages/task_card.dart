@@ -26,6 +26,19 @@ class TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     bool isCompleted = taskData['isCompleted'] ?? false;
 
+    // ✅ Ensure Subject Name is Fetched Correctly
+    String subjectName = taskData.containsKey('subject') ? taskData['subject'] ?? 'No Subject' : 'No Subject';
+
+    // ✅ Convert Firestore Timestamp to Formatted Date
+    String dueDate = 'No Date';
+    if (taskData.containsKey('dueDate')) {
+      if (taskData['dueDate'] is Timestamp) {
+        dueDate = (taskData['dueDate'] as Timestamp).toDate().toLocal().toString();
+      } else if (taskData['dueDate'] is String) {
+        dueDate = taskData['dueDate'];
+      }
+    }
+
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -41,8 +54,8 @@ class TaskCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Subject: ${taskData['subjectName'] ?? 'Unknown'}"),
-            Text("Due: ${taskData['dueDate'] ?? 'No Date'}"),
+            Text("Subject: $subjectName"), // ✅ Fixed Subject Display
+            Text("Due: $dueDate"), // ✅ Properly Displays Date
           ],
         ),
         trailing: Checkbox(

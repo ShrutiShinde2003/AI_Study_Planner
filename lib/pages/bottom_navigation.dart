@@ -6,14 +6,14 @@ import 'package:study_planner/pages/todo_list.dart';
 class BottomNavigation extends StatefulWidget {
   final Widget homePage;
   final Widget dashboardPage;
-  final Widget todoPage; // ✅ Add this back
+  final Widget todoPage; // ✅ Corrected usage
   final Widget GeminiPage;
   final Widget profilePage;
 
   const BottomNavigation({
     required this.homePage,
     required this.dashboardPage,
-       required this.todoPage, // ✅ Fix here
+    required this.todoPage, // ✅ Ensure this is correctly used
     required this.GeminiPage,
     required this.profilePage,
     Key? key,
@@ -30,10 +30,10 @@ class _BottomNavigationState extends State<BottomNavigation> {
   @override
   void initState() {
     super.initState();
-    fetchSubjects(); // 🔹 Fetch subjects when the app starts
+    fetchSubjects(); // 🔹 Fetch subjects when app starts
   }
 
-  // 🔹 Fetch subjects from Firestore every time To-Do List is opened
+  // 🔹 Fetch subjects from Firestore
   void fetchSubjects() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
     DocumentSnapshot userDoc =
@@ -49,7 +49,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
 
   void _onItemTapped(int index) {
     if (index == 1) {
-      fetchSubjects(); // 🔹 Fetch subjects when opening To-Do List
+      fetchSubjects(); // 🔹 Refresh subjects when To-Do List is opened
     }
     setState(() {
       _selectedIndex = index;
@@ -60,7 +60,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
   Widget build(BuildContext context) {
     final List<Widget> _pages = [
       widget.homePage,
-      ToDoListPage(subjects: subjects, subject: subjects.isNotEmpty ? subjects.first : ''),
+      ToDoListPage(subjects: subjects), // ✅ Now passing updated subjects
       widget.dashboardPage,
       widget.GeminiPage,
       widget.profilePage,

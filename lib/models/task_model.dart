@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class TodoItem {
   final String id;
   final String uid;
-  final String subjectName;
+  final String subject; // ✅ Renamed from 'subjectName' to 'subject'
   final String taskName;
   final String description;
   final DateTime dueDate;
@@ -12,7 +12,7 @@ class TodoItem {
   TodoItem({
     required this.id,
     required this.uid,
-    required this.subjectName,
+    required this.subject, // ✅ Updated field name
     required this.taskName,
     required this.description,
     required this.dueDate,
@@ -24,7 +24,7 @@ class TodoItem {
     return TodoItem(
       id: documentId,
       uid: data['uid'] ?? '',
-      subjectName: data['subjectName'] ?? '',
+      subject: data['subject'] ?? '', // ✅ Fixed field name
       taskName: data['taskName'] ?? '',
       description: data['description'] ?? '',
       dueDate: DateTime.parse(data['dueDate'] ?? DateTime.now().toIso8601String()),
@@ -36,7 +36,7 @@ class TodoItem {
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
-      'subjectName': subjectName,
+      'subject': subject, // ✅ Fixed field name
       'taskName': taskName,
       'description': description,
       'dueDate': dueDate.toIso8601String(),
