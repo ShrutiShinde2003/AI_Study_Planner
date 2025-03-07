@@ -18,11 +18,45 @@ class _ToDoListPageState extends State<ToDoListPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // 🔹 Delete subject and its related tasks
+  Future<void> deleteSubject(String subject) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    WriteBatch batch = _firestore.batch();
+
+    try {
+      // Query tasks belonging to the subject
+      QuerySnapshot tasksSnapshot = await _firestore
+          .collection('tasks')
+          .where('uid', isEqualTo: user.uid)
+          .where('subject', isEqualTo: subject)
+          .get();
+
+      // Add each task deletion to the batch
+      for (var doc in tasksSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // Remove the subject from the user document
+      DocumentReference userDocRef = _firestore.collection('users').doc(user.uid);
+      batch.update(userDocRef, {
+        'subjects': FieldValue.arrayRemove([subject])
+      });
+
+      await batch.commit(); // Execute batch deletion
+      print("✅ Subject and its tasks deleted successfully");
+    } catch (e) {
+      print("❌ Error deleting subject: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("To-Do List"),
-      automaticallyImplyLeading: false,  // 🚀 Removes the back button
+      appBar: AppBar(
+        title: Text("To-Do List"),
+        automaticallyImplyLeading: false, // Removes the back button
       ),
       body: Column(
         children: [
@@ -36,16 +70,44 @@ class _ToDoListPageState extends State<ToDoListPage> {
                   ...widget.subjects.map((subject) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: ActionChip(
-                        label: Text(subject),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => NotesPage(subject: subject),
+                      child: GestureDetector(
+                        onLongPress: () {
+                          // Show confirmation dialog before deleting
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text("Delete Subject"),
+                              content: Text(
+                                  "Are you sure you want to delete '$subject' and all its tasks?"),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: Text("Cancel"),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    await deleteSubject(subject);
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text("Delete",
+                                      style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
                             ),
                           );
                         },
+                        child: ActionChip(
+                          label: Text(subject),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    NotesPage(subject: subject),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     );
                   }).toList(),
@@ -57,47 +119,50 @@ class _ToDoListPageState extends State<ToDoListPage> {
 
           SizedBox(height: 10),
 
-          // 🔹 Show ALL Tasks from ALL Subjects (REAL-TIME UPDATES)
+          // 🔹 Show Tasks for Existing Subjects (REAL-TIME UPDATES)
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _firestore
-                  .collection('tasks')
-                  .where('uid', isEqualTo: _auth.currentUser?.uid)
-                  .orderBy('dueDate', descending: false) // ✅ Sort tasks
-                  .snapshots(), // ✅ Listen for real-time changes
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator()); // 🔹 Show loading
-                }
+            child: widget.subjects.isNotEmpty
+                ? StreamBuilder<QuerySnapshot>(
+                    stream: _firestore
+                        .collection('tasks')
+                        .where('uid', isEqualTo: _auth.currentUser?.uid)
+                        .where('subject', whereIn: widget.subjects) // ✅ Only filter if subjects exist
+                        .orderBy('dueDate', descending: false)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(
+                            child: CircularProgressIndicator()); // 🔹 Show loading
+                      }
 
-                if (snapshot.hasError) {
-                  print("❌ Firestore Error: ${snapshot.error}");
-                  return Center(child: Text("Error loading tasks"));
-                }
+                      if (snapshot.hasError) {
+                        print("❌ Firestore Error: ${snapshot.error}");
+                        return Center(child: Text("Error loading tasks"));
+                      }
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  print("⚠️ No tasks found!");
-                  return Center(child: Text("No tasks available"));
-                }
+                      if (snapshot.data == null || snapshot.data!.docs.isEmpty) {
+                        print("⚠️ No tasks found!");
+                        return Center(child: Text("No tasks available"));
+                      }
 
-                var tasks = snapshot.data!.docs;
+                      var tasks = snapshot.data!.docs;
+                      print("📌 Total Tasks Retrieved: ${tasks.length}");
 
-                print("📌 Total Tasks Retrieved: ${tasks.length}");
+                      return ListView.builder(
+                        itemCount: tasks.length,
+                        itemBuilder: (context, index) {
+                          var taskDoc = tasks[index];
+                          var taskData = taskDoc.data() as Map<String, dynamic>;
 
-                return ListView.builder(
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    var taskDoc = tasks[index];
-                    var taskData = taskDoc.data() as Map<String, dynamic>;
-
-                    return TaskCard(
-                      taskId: taskDoc.id, // ✅ Pass correct task ID
-                      taskData: taskData,
-                    );
-                  },
-                );
-              },
-            ),
+                          return TaskCard(
+                            taskId: taskDoc.id, // ✅ Pass correct task ID
+                            taskData: taskData,
+                          );
+                        },
+                      );
+                    },
+                  )
+                : Center(child: Text("No subjects available")), // ✅ Handles empty subjects case
           ),
         ],
       ),
