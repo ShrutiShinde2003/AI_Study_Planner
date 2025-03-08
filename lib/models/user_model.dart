@@ -5,31 +5,34 @@ class UserModel {
   String userName;
   String email;
   List<String> subjects;
-  List<String> followers; // Add followers list
-  List<String> following; // Add following list
+  List<String> followers;
+  List<String> following;
+  String profileImage; // ✅ Added field for profile image
 
   UserModel({
     required this.uid,
     required this.userName,
     required this.email,
     required this.subjects,
-    required this.followers, // Initialize followers
-    required this.following, // Initialize following
+    required this.followers,
+    required this.following,
+    required this.profileImage, // ✅ Initialize profile image
   });
 
-  // Convert the UserModel object to a Firestore-compatible map
+  // ✅ Convert the UserModel object to a Firestore-compatible map
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
       'userName': userName,
       'email': email,
       'subjects': subjects,
-      'followers': followers, // Store followers
-      'following': following, // Store following
+      'followers': followers,
+      'following': following,
+      'profileImage': profileImage, // ✅ Store profile image path
     };
   }
 
-  // Create a UserModel from a Firestore DocumentSnapshot
+  // ✅ Create a UserModel from a Firestore DocumentSnapshot
   factory UserModel.fromDocumentSnapshot(DocumentSnapshot snapshot) {
     final data = snapshot.data() as Map<String, dynamic>;
     return UserModel(
@@ -37,8 +40,9 @@ class UserModel {
       userName: data['userName'] ?? '',
       email: data['email'] ?? '',
       subjects: List<String>.from(data['subjects'] ?? []),
-      followers: List<String>.from(data['followers'] ?? []), // Handle followers
-      following: List<String>.from(data['following'] ?? []), // Handle following
+      followers: List<String>.from(data['followers'] ?? []),
+      following: List<String>.from(data['following'] ?? []),
+      profileImage: data['profileImage'] ?? '', // ✅ Load profile image path
     );
   }
 }

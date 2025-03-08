@@ -250,6 +250,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         subjects: [], // Initialize subjects
                         followers: [], // Initialize empty followers list
                         following: [], // Initialize empty following list
+                        profileImage:  "", // ✅ Initialize profileImage as an empty string (or use a default image path)
                       );
 
                       // Add the user data to Firestore using the UID as the document ID

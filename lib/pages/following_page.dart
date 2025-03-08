@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:study_planner/services/firestore_service(users).dart';
 
 class FollowingPage extends StatelessWidget {
+  final FirebaseService firebaseService = FirebaseService();
+
   @override
   Widget build(BuildContext context) {
-    String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    String userId = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
       appBar: AppBar(title: Text("Following")),
@@ -34,7 +38,7 @@ class FollowingPage extends StatelessWidget {
           return ListView.builder(
             itemCount: following.length,
             itemBuilder: (context, index) {
-              String followingUserId = following[index] ?? ''; // Ensure it's a valid string
+              String followingUserId = following[index] ?? '';
               if (followingUserId.isEmpty) {
                 return SizedBox(); // Skip empty user IDs
               }
@@ -61,16 +65,31 @@ class FollowingPage extends StatelessWidget {
                   var followingData = userSnapshot.data!.data() as Map<String, dynamic>? ?? {};
 
                   return ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: followingData['profileImage'] != null
-                          ? NetworkImage(followingData['profileImage'])
-                          : null,
-                      child: followingData['profileImage'] == null ? Icon(Icons.person) : null,
+                    leading: FutureBuilder<String?>(
+                      future: firebaseService.getFollowingProfileImage(followingUserId, followingData['profileImage']), // ✅ FIXED
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return CircleAvatar(
+                            backgroundColor: Colors.grey[300],
+                            child: Icon(Icons.person, color: Colors.white),
+                          );
+                        }
+
+                        String? imagePath = snapshot.data;
+                        bool imageExists = imagePath != null && File(imagePath).existsSync();
+
+                        print("Following: $followingUserId -> Image Path: $imagePath | Exists: $imageExists");
+
+                        return CircleAvatar(
+                          backgroundImage: imageExists ? FileImage(File(imagePath!)) : null,
+                          child: !imageExists ? Icon(Icons.person, color: Colors.white) : null,
+                          backgroundColor: Colors.grey[300],
+                        );
+                      },
                     ),
                     title: Text(followingData['userName'] ?? "Unknown"),
                     subtitle: Text(followingData['email'] ?? ""),
-                    trailing: IconButton(
-                      icon: Icon(Icons.remove_circle, color: Colors.red),
+                    trailing: ElevatedButton(
                       onPressed: () async {
                         await FirebaseFirestore.instance.collection('users').doc(userId).update({
                           'following': FieldValue.arrayRemove([followingUserId])
@@ -80,6 +99,12 @@ class FollowingPage extends StatelessWidget {
                           'followers': FieldValue.arrayRemove([userId])
                         });
                       },
+                      child: Text("Unfollow"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
                     ),
                   );
                 },

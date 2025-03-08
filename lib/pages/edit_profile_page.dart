@@ -25,21 +25,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
     loadUserData();
   }
 
+  /// 🔹 Load user data from Firestore & SharedPreferences
   void loadUserData() async {
     String userId = _auth.currentUser?.uid ?? '';
     if (userId.isEmpty) return;
 
     DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
-    if (userDoc.exists) {
-      setState(() {
-        _nameController.text = userDoc['userName'] ?? '';
-        _emailController.text = userDoc['email'] ?? '';
-        profileImagePath = userDoc['profileImage'] ?? ''; // Load Firestore image
-      });
-    }
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      _nameController.text = userDoc['userName'] ?? '';
+      _emailController.text = userDoc['email'] ?? '';
+      profileImagePath = prefs.getString('profileImage_$userId') ?? userDoc['profileImage'] ?? '';
+    });
+
+    print("🔍 Loaded Image for $userId: $profileImagePath");
   }
 
-  // 🔹 Show Avatar & Gallery Upload Options
+  /// 🔹 Show Avatar & Gallery Upload Options
   void _showImagePicker() {
     showModalBottomSheet(
       context: context,
@@ -67,18 +70,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  // 🔹 Set Local Avatar
+  /// 🔹 Set Local Avatar
   void _setLocalAvatar(String imagePath) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('profileImagePath', imagePath);
+    String userId = _auth.currentUser?.uid ?? '';
+    if (userId.isEmpty) return;
+
+    await saveUserProfileImagePath(userId, imagePath);
+
     setState(() {
       profileImagePath = imagePath;
     });
+
     _updateProfileImage(imagePath);
     Navigator.pop(context);
   }
 
-  // 🔹 Pick Image from Gallery
+  /// 🔹 Pick Image from Gallery
   Future<void> _pickImageFromGallery() async {
     Navigator.pop(context);
     final picker = ImagePicker();
@@ -90,15 +97,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  // 🔹 Save Image in Local Storage
+  /// 🔹 Save Image in Local Storage and SharedPreferences
   Future<void> _saveImageLocally(File imageFile) async {
+    String userId = _auth.currentUser?.uid ?? '';
+    if (userId.isEmpty) return;
+
     final directory = await getApplicationDocumentsDirectory();
-    final localImagePath = '${directory.path}/profile_image.jpg';
+    final localImagePath = '${directory.path}/profile_$userId.jpg';
 
     await imageFile.copy(localImagePath);
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('profileImagePath', localImagePath);
+    await saveUserProfileImagePath(userId, localImagePath);
 
     setState(() {
       profileImagePath = localImagePath;
@@ -107,7 +115,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _updateProfileImage(localImagePath);
   }
 
-  // 🔹 Update Profile Image in Firebase
+  /// ✅ Save Image Path in SharedPreferences per user
+  Future<void> saveUserProfileImagePath(String userId, String imagePath) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('profileImage_$userId', imagePath);
+    print("✅ Saved Image for $userId: $imagePath");
+  }
+
+  /// 🔹 Update Profile Image in Firestore
   void _updateProfileImage(String imagePath) async {
     String userId = _auth.currentUser?.uid ?? '';
     if (userId.isEmpty) return;
@@ -115,9 +130,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
     await _firestore.collection('users').doc(userId).update({
       'profileImage': imagePath,
     });
+
+    print("🔥 Firestore Updated Image Path: $imagePath");
   }
 
-  // 🔹 Save Updated User Profile
+  /// 🔹 Save Updated User Profile
   void saveProfile() async {
     String userId = _auth.currentUser?.uid ?? '';
     if (userId.isEmpty) return;
@@ -131,7 +148,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (_passwordController.text.isNotEmpty) {
         User? user = _auth.currentUser;
 
-        // 🔹 Prompt user for their current password before updating
         String? currentPassword = await showDialog<String>(
           context: context,
           builder: (context) {
@@ -164,15 +180,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
           return;
         }
 
-        // 🔹 Re-authenticate with the provided old password
         AuthCredential credential = EmailAuthProvider.credential(
           email: user!.email!,
           password: currentPassword,
         );
 
         await user.reauthenticateWithCredential(credential);
-
-        // Now update the password
         await user.updatePassword(_passwordController.text);
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -180,7 +193,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
       }
 
-      // 🔹 Return updated image to ProfilePage
       Navigator.pop(context, profileImagePath);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -223,24 +235,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ],
             ),
             SizedBox(height: 20),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: "Name"),
-            ),
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(labelText: "Email"),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(labelText: "New Password"),
-              obscureText: true,
-            ),
+            TextField(controller: _nameController, decoration: InputDecoration(labelText: "Name")),
+            TextField(controller: _emailController, decoration: InputDecoration(labelText: "Email")),
+            TextField(controller: _passwordController, decoration: InputDecoration(labelText: "New Password"), obscureText: true),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: saveProfile,
-              child: Text("Save"),
-            ),
+            ElevatedButton(onPressed: saveProfile, child: Text("Save")),
           ],
         ),
       ),
