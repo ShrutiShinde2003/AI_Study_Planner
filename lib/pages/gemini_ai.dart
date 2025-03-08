@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'package:study_planner/services/gemini_api_service.dart';  // Import API key file
 import 'package:flutter/material.dart';
 import 'package:study_planner/services/gemini_api_service.dart';
 
@@ -9,30 +9,29 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  String _chatbotReply = "";
   bool _isLoading = false;
-
-  // Initialize the Gemini API service
   late GeminiApiService _geminiApiService;
+
+  List<Map<String, String>> _messages = [];
 
   @override
   void initState() {
     super.initState();
-    // Pass the API key to the service
-    _geminiApiService = GeminiApiService('AIzaSyARGA2fjBuvflLE6-HOE1i9CGDuXTk8krk');
+    _geminiApiService = GeminiApiService(ApiKeys.geminiApiKey); // Use API key from external file
   }
 
   Future<void> sendMessage(String message) async {
     if (message.isEmpty) return;
 
     setState(() {
+      _messages.add({"sender": "user", "text": message});
       _isLoading = true;
     });
 
     final reply = await _geminiApiService.sendMessage(message);
 
     setState(() {
-      _chatbotReply = reply;
+      _messages.add({"sender": "ai", "text": reply});
       _isLoading = false;
     });
   }
@@ -44,43 +43,63 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Text("Chat with AI"),
         backgroundColor: Colors.blueAccent,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Container(
-                  alignment: Alignment.topLeft,
-                  child: Text(
-                    _chatbotReply.isNotEmpty ? _chatbotReply : "Ask something to the AI!",
-                    style: TextStyle(fontSize: 16, color: Colors.black87),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final message = _messages[index];
+                final isUser = message["sender"] == "user";
+                return Align(
+                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    padding: EdgeInsets.all(12),
+                    margin: EdgeInsets.symmetric(vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isUser ? Colors.blue[300] : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      message["text"]!,
+                      style: TextStyle(fontSize: 16, color: Colors.black),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      labelText: "Enter your message",
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
-              ),
+                SizedBox(width: 10),
+                _isLoading
+                    ? CircularProgressIndicator()
+                    : IconButton(
+                        icon: Icon(Icons.send, color: Colors.blue),
+                        onPressed: () {
+                          final userMessage = _controller.text.trim();
+                          if (userMessage.isNotEmpty) {
+                            sendMessage(userMessage);
+                            _controller.clear();
+                          }
+                        },
+                      ),
+              ],
             ),
-            TextField(
-              controller: _controller,
-              decoration: InputDecoration(
-                labelText: "Enter your message",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            _isLoading
-                ? CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: () {
-                      final userMessage = _controller.text.trim();
-                      if (userMessage.isNotEmpty) {
-                        sendMessage(userMessage);
-                        _controller.clear();
-                      }
-                    },
-                    child: Text("Send"),
-                  ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

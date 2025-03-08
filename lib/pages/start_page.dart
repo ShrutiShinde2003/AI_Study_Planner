@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'register_page.dart'; // Import your RegisterPage
-import 'login_page.dart'; // Import your LoginPage
+import 'register_page.dart';
+import 'login_page.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -8,116 +8,130 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 90, 82, 210), // background color
+      backgroundColor: Colors.indigo.shade200,
       body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            // Illustration Section (Now at the top)
+            // Illustration Section
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 40.0),
+              padding: const EdgeInsets.symmetric(vertical: 25.0),
               child: Center(
                 child: Image.asset(
-                  'lib/assets/images/start.png', // Replace with your image path
-                  height: 350, // Adjust height as needed
+                  'lib/assets/images/start.png',
+                  height: 500,
                 ),
               ),
             ),
 
+            // Pushes White Box to Bottom
             const Spacer(),
 
-            // Tagline Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                children: [
-                  const Text(
-                    "Enjoy learning at your own pace!",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
+            // White Box Section
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                height: 200,
+                width: double.infinity, // Makes it stretch horizontally
+                constraints: const BoxConstraints(
+                  maxWidth: 370, // Restrict width for better appearance
+                ),
+                margin: const EdgeInsets.only(bottom: 30), // Space from bottom
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, 7),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Get Started Button
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 90, 82, 210),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 15,
-                        horizontal: 100,
-                      ),
-                      elevation: 5,
-                    ),
-                    onPressed: () {
-                      // Navigate to the Register Page
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RegisterPage(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      "Get Started",
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // Shrinks to fit content
+                  children: [
+                    const Text(
+                      "Enjoy learning at your own pace!",
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white, // white text
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 15),
 
-                  // Already a Member? Login Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        "Already a member?",
+                    // Get Started Button
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo.shade400,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 110,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterPage(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        "Get Started",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () {
-                          // Navigate to the Login Page
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginPage(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          "Login now",
+                    ),
+                    const SizedBox(height: 15),
+
+                    // Already a Member? Login Section
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "Already a member?",
                           style: TextStyle(
-                            color:Colors.white,
+                            color: Colors.black,
                             fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-                ],
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginPage(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            "Login now",
+                            style: TextStyle(
+                              color: Colors.indigo,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
+        ),
       ),
-    )
     );
   }
 }
-    
-

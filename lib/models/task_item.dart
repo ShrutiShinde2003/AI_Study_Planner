@@ -1,47 +1,35 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// lib/models/todo_item.dart
 
-class TaskModel {
-  String uid;
-  String subject;
-  String task;
-  String description;
-  String dueDate;
-  String status;
-  DateTime timeCreated;
+class TodoItem {
+  String username;
+  String title;
+  bool isCompleted;
+  String uid;  // Added field to associate tasks with a user
 
-  TaskModel({
-    required this.uid,
-    required this.subject,
-    required this.task,
-    required this.description,
-    required this.dueDate,
-    this.status = "pending",
-    required this.timeCreated,
+  TodoItem({
+    required this.username,
+    required this.title,
+    this.isCompleted = false,
+    required this.uid,  // Include the user ID when creating a new task
   });
 
-  // Convert TaskModel instance to a Map for Firestore
+  // Convert To-Do item to a map for Firestore
   Map<String, dynamic> toMap() {
     return {
-      "uid": uid,
-      "subject": subject,
-      "task": task,
-      "description": description,
-      "due_date": dueDate,
-      "status": status,
-      "time_created": timeCreated,
+      'id': username,
+      'title': title,
+      'isCompleted': isCompleted,
+      'uid': uid,  // Add user ID to the map
     };
   }
 
-  // Create a TaskModel from a Firestore document snapshot
-  factory TaskModel.fromMap(Map<String, dynamic> map) {
-    return TaskModel(
-      uid: map["uid"] ?? "",
-      subject: map["subject"] ?? "",
-      task: map["task"] ?? "",
-      description: map["description"] ?? "",
-      dueDate: map["due_date"] ?? "",
-      status: map["status"] ?? "pending",
-      timeCreated: (map["time_created"] as Timestamp).toDate(),
+  // Create a To-Do item from a Firestore document
+  factory TodoItem.fromMap(Map<String, dynamic> map, String documentId) {
+    return TodoItem(
+      username: documentId,
+      title: map['title'] ?? '',
+      isCompleted: map['isCompleted'] ?? false,
+      uid: map['uid'] ?? '',  // Ensure the 'uid' is retrieved from the Firestore document
     );
   }
 }

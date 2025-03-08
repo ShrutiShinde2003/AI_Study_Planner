@@ -1,8 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/task_model.dart'; // Import TaskModel
-import '../widgets/task_card.dart'; // Import TaskCard UI
+import 'package:study_planner/pages/task_card.dart';
+import '../models/user_model.dart'; // Import TaskModel
+import '../pages/task_card.dart'; // Import TaskCard UI
 
 class NotesPage extends StatefulWidget {
   final String subject;
@@ -30,7 +31,7 @@ class _NotesPageState extends State<NotesPage> {
       String uid = user.uid;
 
       // Create a TaskModel instance
-      TaskModel newTask = TaskModel(
+      UserModel newTask =  TodoItem (
         uid: uid,
         subject: widget.subject,
         task: taskController.text.trim(),
