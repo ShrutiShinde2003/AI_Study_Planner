@@ -67,10 +67,9 @@ class _RegisterPageState extends State<RegisterPage> {
               Text(
                 'Let\'s create an account for you',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold
-                ),
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(height: 10),
@@ -247,7 +246,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       UserModel userModel = UserModel(
                         uid: uid,
                         userName: userNameController.text.trim(),
-                        email: emailController.text.trim(), subjects: [],
+                        email: emailController.text.trim(),
+                        subjects: [], // Initialize subjects
+                        followers: [], // Initialize empty followers list
+                        following: [], // Initialize empty following list
                       );
 
                       // Add the user data to Firestore using the UID as the document ID
@@ -267,7 +269,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             homePage: HomePage(),
                             todoPage: ToDoListPage(), // ✅ FIXED
                             dashboardPage: DashboardPage(),
-                            profilePage: ProfilePage(userId: '',),
+                            profilePage: ProfilePage(
+                              userId: '',
+                            ),
                             GeminiPage: ChatScreen(),
                           ), // Ensure LoginPage exists
                         ),

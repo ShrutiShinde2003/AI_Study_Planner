@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:study_planner/services/firestore_service(users).dart';
 
 class FollowersPage extends StatelessWidget {
+  final FirebaseService firebaseService = FirebaseService(); // Create an instance of FirebaseService
+
   @override
   Widget build(BuildContext context) {
     String userId = FirebaseAuth.instance.currentUser!.uid;
@@ -12,42 +15,82 @@ class FollowersPage extends StatelessWidget {
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('users').doc(userId).snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData || snapshot.data == null) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           }
 
-          var userData = snapshot.data!.data() as Map<String, dynamic>;
-          List<dynamic> followers = userData['followers'] ?? [];
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
 
-          return followers.isEmpty
-              ? Center(child: Text("No followers yet"))
-              : ListView.builder(
-                  itemCount: followers.length,
-                  itemBuilder: (context, index) {
-                    return FutureBuilder<DocumentSnapshot>(
-                      future: FirebaseFirestore.instance.collection('users').doc(followers[index]).get(),
-                      builder: (context, userSnapshot) {
-                        if (!userSnapshot.hasData || userSnapshot.data == null) {
-                          return ListTile(title: Text("Loading..."));
-                        }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return Center(child: Text("No data found"));
+          }
 
-                        var followerData = userSnapshot.data!.data() as Map<String, dynamic>;
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundImage: followerData['profileImage'] != null
-                                ? NetworkImage(followerData['profileImage'])
-                                : null,
-                            child: followerData['profileImage'] == null ? Icon(Icons.person) : null,
-                          ),
-                          title: Text(followerData['userName'] ?? "Unknown"),
-                          subtitle: Text(followerData['email'] ?? ""),
-                        );
-                      },
-                    );
-                  },
-                );
+          var userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+          List<String> followers = List<String>.from(userData['followers'] ?? []);
+
+          if (followers.isEmpty) {
+            return Center(child: Text("No followers yet"));
+          }
+
+          return _buildFollowersList(followers);
         },
       ),
+    );
+  }
+
+  Widget _buildFollowersList(List<String> followerIds) {
+    if (followerIds.isEmpty) {
+      return Center(child: Text("No followers yet")); // Prevents Firestore query crash
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: followerIds.length > 10 ? followerIds.sublist(0, 10) : followerIds)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text("Error loading followers"));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text("No followers found")); // Handles empty state gracefully
+        }
+
+        var followers = snapshot.data!.docs;
+
+        return ListView.builder(
+          itemCount: followers.length,
+          itemBuilder: (context, index) {
+            var followerData = followers[index].data() as Map<String, dynamic>? ?? {};
+            String followerUserId = followers[index].id;
+
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundImage: followerData['profileImage'] != null
+                    ? NetworkImage(followerData['profileImage'])
+                    : null,
+                child: followerData['profileImage'] == null ? Icon(Icons.person) : null,
+              ),
+              title: Text(followerData['userName'] ?? "Unknown"),
+              subtitle: Text(followerData['email'] ?? ""),
+              trailing: ElevatedButton(
+                onPressed: () {
+                  firebaseService.removeFollower(FirebaseAuth.instance.currentUser!.uid, followerUserId);
+                },
+                child: Text("Remove"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -4,13 +4,17 @@ class UserModel {
   String uid;
   String userName;
   String email;
-  List<String> subjects; // Add subjects list
+  List<String> subjects;
+  List<String> followers; // Add followers list
+  List<String> following; // Add following list
 
   UserModel({
     required this.uid,
     required this.userName,
     required this.email,
-    required this.subjects, // Initialize subjects
+    required this.subjects,
+    required this.followers, // Initialize followers
+    required this.following, // Initialize following
   });
 
   // Convert the UserModel object to a Firestore-compatible map
@@ -19,7 +23,9 @@ class UserModel {
       'uid': uid,
       'userName': userName,
       'email': email,
-      'subjects': subjects, // Store subjects
+      'subjects': subjects,
+      'followers': followers, // Store followers
+      'following': following, // Store following
     };
   }
 
@@ -30,7 +36,9 @@ class UserModel {
       uid: data['uid'] ?? '',
       userName: data['userName'] ?? '',
       email: data['email'] ?? '',
-      subjects: List<String>.from(data['subjects'] ?? []), // Handle subjects
+      subjects: List<String>.from(data['subjects'] ?? []),
+      followers: List<String>.from(data['followers'] ?? []), // Handle followers
+      following: List<String>.from(data['following'] ?? []), // Handle following
     );
   }
 }

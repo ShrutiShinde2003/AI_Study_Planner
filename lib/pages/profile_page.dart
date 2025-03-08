@@ -37,17 +37,24 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void fetchUserData() async {
-    String userId = _auth.currentUser?.uid ?? '';
+    String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
     if (userId.isEmpty) return;
 
     DocumentSnapshot userDoc =
-        await _firestore.collection('users').doc(userId).get();
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
     if (userDoc.exists) {
       setState(() {
         userName = userDoc['userName'] ?? 'No Name';
         email = userDoc['email'] ?? 'No Email';
-        followingCount = (userDoc['following'] as List?)?.length ?? 0;
-        followersCount = (userDoc['followers'] as List?)?.length ?? 0;
+
+        // ✅ Get followers count directly from Firestore
+        List<dynamic> followersList = userDoc['followers'] ?? [];
+        followersCount = followersList.length;
+
+        // ✅ Get following count directly from Firestore
+        List<dynamic> followingList = userDoc['following'] ?? [];
+        followingCount = followingList.length;
       });
     }
   }
@@ -136,6 +143,11 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> refreshProfile() async {
+    fetchUserData(); // Refresh user data
+    fetchSubjects(); // Refresh subjects list
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -154,146 +166,151 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: () async {
-                  String? updatedImage = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => EditProfilePage()),
-                  );
-                  if (updatedImage != null) {
-                    setState(() {
-                      profileImagePath = updatedImage;
-                    });
-                  }
-                },
-                child: StreamBuilder<DocumentSnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(FirebaseAuth.instance.currentUser!.uid)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData || snapshot.data == null) {
+      body: RefreshIndicator(
+        onRefresh: refreshProfile,
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    String? updatedImage = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => EditProfilePage()),
+                    );
+                    if (updatedImage != null) {
+                      setState(() {
+                        profileImagePath = updatedImage;
+                      });
+                    }
+                  },
+                  child: StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(FirebaseAuth.instance.currentUser!.uid)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData || snapshot.data == null) {
+                        return CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.grey.shade300,
+                          child:
+                              Icon(Icons.person, size: 40, color: Colors.white),
+                        );
+                      }
+
+                      var userData =
+                          snapshot.data!.data() as Map<String, dynamic>;
+                      String imageUrl = userData['profileImage'] ?? '';
+
                       return CircleAvatar(
                         radius: 50,
-                        backgroundColor: Colors.grey.shade300,
-                        child:
-                            Icon(Icons.person, size: 40, color: Colors.white),
+                        backgroundImage: imageUrl.isNotEmpty
+                            ? (imageUrl.contains("assets/")
+                                ? AssetImage(imageUrl) as ImageProvider
+                                : FileImage(File(imageUrl)))
+                            : null,
+                        child: imageUrl.isEmpty
+                            ? Icon(Icons.person, size: 40, color: Colors.white)
+                            : null,
                       );
-                    }
-
-                    var userData =
-                        snapshot.data!.data() as Map<String, dynamic>;
-                    String imageUrl = userData['profileImage'] ?? '';
-
-                    return CircleAvatar(
-                      radius: 50,
-                      backgroundImage: imageUrl.isNotEmpty
-                          ? (imageUrl.contains("assets/")
-                              ? AssetImage(imageUrl) as ImageProvider
-                              : FileImage(File(imageUrl)))
-                          : null,
-                      child: imageUrl.isEmpty
-                          ? Icon(Icons.person, size: 40, color: Colors.white)
-                          : null,
+                    },
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(userName,
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(email, style: TextStyle(fontSize: 16, color: Colors.grey)),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => FollowersPage()),
+                        );
+                      },
+                      child: Column(
+                        children: [
+                          Text(followersCount.toString(),
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text("Followers", style: TextStyle(fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 40),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => FollowingPage()),
+                        );
+                      },
+                      child: Column(
+                        children: [
+                          Text(followingCount.toString(),
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text("Following", style: TextStyle(fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => SearchUsersPage()),
                     );
                   },
+                  child: Text("Add Friends"),
                 ),
-              ),
-              SizedBox(height: 10),
-              Text(userName,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              Text(email, style: TextStyle(fontSize: 16, color: Colors.grey)),
-              SizedBox(height: 20),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => FollowersPage()),
-                      );
-                    },
-                    child: Column(
-                      children: [
-                        Text(followersCount.toString(),
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text("Followers", style: TextStyle(fontSize: 16)),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 40),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => FollowingPage()),
-                      );
-                    },
-                    child: Column(
-                      children: [
-                        Text(followingCount.toString(),
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text("Following", style: TextStyle(fontSize: 16)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 20),
-
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SearchUsersPage()),
-                  );
-                },
-                child: Text("Add Friends"),
-              ),
-
-              SizedBox(height: 20),
-
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text("Subjects:",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
-              subjects.isEmpty
-                  ? Text("No subjects added", style: TextStyle(color: Colors.grey))
-                  : Column(
-                      children: subjects.map((subject) {
-                        return ListTile(
-                          leading: Icon(Icons.book, color: Colors.blue),
-                          title: Text(subject, style: TextStyle(fontSize: 16)),
-                          trailing: IconButton(
-                            icon: Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => deleteSubject(subject),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-              TextField(
-                controller: _subjectController,
-                decoration: InputDecoration(labelText: "Add Subject"),
-              ),
-              ElevatedButton(
-                onPressed: addSubject,
-                child: Text("Add Subject"),
-              ),
-            ],
+                SizedBox(height: 20),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text("Subjects:",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
+                subjects.isEmpty
+                    ? Text("No subjects added",
+                        style: TextStyle(color: Colors.grey))
+                    : Column(
+                        children: subjects.map((subject) {
+                          return ListTile(
+                            leading: Icon(Icons.book, color: Colors.blue),
+                            title:
+                                Text(subject, style: TextStyle(fontSize: 16)),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => deleteSubject(subject),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                TextField(
+                  controller: _subjectController,
+                  decoration: InputDecoration(labelText: "Add Subject"),
+                ),
+                ElevatedButton(
+                  onPressed: addSubject,
+                  child: Text("Add Subject"),
+                ),
+              ],
+            ),
           ),
         ),
       ),
