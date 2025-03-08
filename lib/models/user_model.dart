@@ -34,7 +34,7 @@ class UserModel {
       userName: data['userName'] ?? '',
       email: data['email'] ?? '',
       subjects: List<String>.from(data['subjects'] ?? []),
-      completedTasksCount: data['completedTasksCount'] ?? 0, // ✅ Default to 0 if missing
+      completedTasksCount: data['completedTasksCount'] ?? 0 , // ✅ Default to 0 if missing
     );
   }
 }

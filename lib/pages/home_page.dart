@@ -48,14 +48,15 @@ class _HomePageState extends State<HomePage> {
     if (userId.isEmpty) return;
 
     _firestore.collection('users').doc(userId).snapshots().listen((snapshot) async {
-      if (snapshot.exists) {
-        Map<String, dynamic>? data = snapshot.data();
-        int updatedCompletedTasks = data?['completedTasksCount'] ?? -1; // 🔍 Default to -1 if missing
+      if (snapshot.exists && snapshot.data() != null) {
+        Map<String, dynamic> data = snapshot.data()!;
+        int updatedCompletedTasks = data['completedTasksCount'] ?? -1; 
 
+        // ✅ If missing, initialize in Firestore **before returning**
         if (updatedCompletedTasks == -1) {
           print("⚠️ completedTasksCount field missing! Initializing...");
           await _firestore.collection('users').doc(userId).update({'completedTasksCount': 0});
-          return;
+          updatedCompletedTasks = 0;
         }
 
         setState(() {
