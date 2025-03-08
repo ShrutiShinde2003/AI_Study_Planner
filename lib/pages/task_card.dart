@@ -4,17 +4,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class TaskCard extends StatelessWidget {
   final String taskId;
   final Map<String, dynamic> taskData;
+  final VoidCallback? onCompleteTask; // ✅ Callback for marking tasks as complete
+  final VoidCallback? onDeleteTask;   // ✅ Callback for deleting tasks
 
-  TaskCard({required this.taskId, required this.taskData});
+  TaskCard({
+    required this.taskId,
+    required this.taskData,
+    this.onCompleteTask,  // ✅ Ensure these parameters exist
+    this.onDeleteTask, 
+  });
 
+  /// 🔹 Toggle task completion status in Firestore
   void _toggleTaskCompletion(String taskId, bool currentStatus) {
-    if (taskId.isEmpty) {
-      print("❌ Error: Task ID is empty!");
-      return;
-    }
-
     FirebaseFirestore.instance.collection('tasks').doc(taskId).update({
-      'isCompleted': !currentStatus, // Toggle status
+      'isCompleted': !currentStatus,
+      'completedAt': !currentStatus ? FieldValue.serverTimestamp() : null,
     }).then((_) {
       print("✅ Task status updated!");
     }).catchError((error) {
@@ -22,15 +26,35 @@ class TaskCard extends StatelessWidget {
     });
   }
 
+  /// 🔹 Delete Task (If Completed, Save to `completedTasks`)
+  void _deleteTask(BuildContext context) async {
+    bool isCompleted = taskData["isCompleted"] ?? false;
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      if (isCompleted) {
+        // ✅ Move to completedTasks before deleting
+        await firestore.collection('completedTasks').doc(taskId).set(taskData);
+      }
+
+      // ✅ Delete from tasks collection
+      await firestore.collection('tasks').doc(taskId).delete();
+      print("✅ Task deleted successfully!");
+
+      // ✅ Call onDeleteTask callback to update UI
+      if (onDeleteTask != null) onDeleteTask!();
+    } catch (e) {
+      print("❌ Error deleting task: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    bool isCompleted = taskData['isCompleted'] ?? false;
-
-    // ✅ Ensure Subject Name is Fetched Correctly
-    String subjectName = taskData.containsKey('subject') ? taskData['subject'] ?? 'No Subject' : 'No Subject';
+    bool isCompleted = taskData["isCompleted"] ?? false;
+    String taskName = taskData['taskName'] ?? "No Task Name";
 
     // ✅ Convert Firestore Timestamp to Formatted Date
-    String dueDate = 'No Date';
+    String dueDate = 'No Due Date';
     if (taskData.containsKey('dueDate')) {
       if (taskData['dueDate'] is Timestamp) {
         dueDate = (taskData['dueDate'] as Timestamp).toDate().toLocal().toString();
@@ -44,25 +68,56 @@ class TaskCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: ListTile(
         contentPadding: EdgeInsets.all(10),
+        leading: Icon(
+          isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+          color: isCompleted ? Colors.green : Colors.grey,
+        ),
         title: Text(
-          taskData['taskName'] ?? "No Task Name",
+          taskName,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            decoration: isCompleted ? TextDecoration.lineThrough : null, // Strike-through if completed
+            decoration: isCompleted ? TextDecoration.lineThrough : null, // ✅ Strike-through if completed
           ),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        subtitle: Text("Due: $dueDate"),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text("Subject: $subjectName"), // ✅ Fixed Subject Display
-            Text("Due: $dueDate"), // ✅ Properly Displays Date
+            if (!isCompleted) // ✅ Show only if task is not completed
+              IconButton(
+                icon: Icon(Icons.check, color: Colors.green),
+                onPressed: () {
+                  _toggleTaskCompletion(taskId, isCompleted);
+                  if (onCompleteTask != null) onCompleteTask!();
+                },
+              ),
+            IconButton(
+              icon: Icon(Icons.delete, color: Colors.red), // ✅ DELETE Button
+              onPressed: () {
+                // ✅ Show Confirmation Dialog Before Deleting
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text("Delete Task"),
+                    content: Text("Are you sure you want to delete this task?"),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _deleteTask(context);
+                        },
+                        child: Text("Delete", style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ],
-        ),
-        trailing: Checkbox(
-          value: isCompleted,
-          onChanged: (value) {
-            _toggleTaskCompletion(taskId, isCompleted);
-          },
         ),
       ),
     );

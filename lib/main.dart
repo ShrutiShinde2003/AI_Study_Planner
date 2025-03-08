@@ -41,7 +41,7 @@ class AuthWrapper extends StatelessWidget {
           String userId = snapshot.data!.uid; // Get logged-in user's ID
           return BottomNavigation(
             homePage: HomePage(),
-            todoPage: ToDoListPage(subjects: []),
+            todoPage: ToDoListPage(),
             dashboardPage: DashboardPage(),
             GeminiPage: ChatScreen(),
             profilePage:ProfilePage(userId: '',)

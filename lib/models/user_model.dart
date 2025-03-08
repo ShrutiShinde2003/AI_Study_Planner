@@ -4,13 +4,15 @@ class UserModel {
   String uid;
   String userName;
   String email;
-  List<String> subjects; // Add subjects list
+  List<String> subjects; // ✅ List of subjects
+  int completedTasksCount; // ✅ New field for tracking completed tasks
 
   UserModel({
     required this.uid,
     required this.userName,
     required this.email,
-    required this.subjects, // Initialize subjects
+    required this.subjects,
+    required this.completedTasksCount, // ✅ Initialize completed tasks count
   });
 
   // Convert the UserModel object to a Firestore-compatible map
@@ -19,7 +21,8 @@ class UserModel {
       'uid': uid,
       'userName': userName,
       'email': email,
-      'subjects': subjects, // Store subjects
+      'subjects': subjects,
+      'completedTasksCount': completedTasksCount, // ✅ Store completed tasks count
     };
   }
 
@@ -30,7 +33,8 @@ class UserModel {
       uid: data['uid'] ?? '',
       userName: data['userName'] ?? '',
       email: data['email'] ?? '',
-      subjects: List<String>.from(data['subjects'] ?? []), // Handle subjects
+      subjects: List<String>.from(data['subjects'] ?? []),
+      completedTasksCount: data['completedTasksCount'] ?? 0, // ✅ Default to 0 if missing
     );
   }
 }

@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:study_planner/pages/todo_list.dart';
+import 'package:study_planner/pages/chat_page.dart'; // 🔹 Import Chat Page
 
 class BottomNavigation extends StatefulWidget {
   final Widget homePage;
   final Widget dashboardPage;
-  final Widget todoPage; // ✅ Corrected usage
+  final Widget todoPage;
   final Widget GeminiPage;
   final Widget profilePage;
 
   const BottomNavigation({
     required this.homePage,
     required this.dashboardPage,
-    required this.todoPage, // ✅ Ensure this is correctly used
+    required this.todoPage,
     required this.GeminiPage,
     required this.profilePage,
     Key? key,
@@ -60,8 +61,9 @@ class _BottomNavigationState extends State<BottomNavigation> {
   Widget build(BuildContext context) {
     final List<Widget> _pages = [
       widget.homePage,
-      ToDoListPage(subjects: subjects), // ✅ Now passing updated subjects
+      ToDoListPage(),
       widget.dashboardPage,
+      ChatPage(), // ✅ Add Chat Page
       widget.GeminiPage,
       widget.profilePage,
     ];
@@ -71,16 +73,24 @@ class _BottomNavigationState extends State<BottomNavigation> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        iconSize: 28,
+        selectedItemColor: Colors.blue, // Make selected icon visible
+        unselectedItemColor: Colors.grey, // Keep unselected icons visible
+        enableFeedback: false, // Disable default ripple effect
+        backgroundColor: Colors.white, // Ensure visibility on dark background
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.check_circle), label: 'ToDo'),
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.smart_toy), label: 'AI Chat'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.check_circle), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.smart_toy), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
         ],
+        selectedIconTheme:
+            IconThemeData(size: 30), // Optional: Slightly larger selected icon
       ),
     );
   }
