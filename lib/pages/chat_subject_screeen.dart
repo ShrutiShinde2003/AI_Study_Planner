@@ -22,24 +22,22 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  List<Map<String, String>> _flashcards = [];
-
   @override
   void initState() {
     super.initState();
-    _geminiApiService = GeminiApiService(); // ✅ Initialize service
+    _geminiApiService = GeminiApiService(); // Initialize Gemini service
   }
 
   /// ✅ Clean AI Response
   String cleanText(String text) => text.replaceAll('*', '').trim();
 
-  /// ✅ Send Text Message using Gemini AI
+  /// ✅ Send Text Message
   Future<void> sendMessage(String message) async {
     if (message.isEmpty) return;
 
     String userId = _auth.currentUser?.uid ?? '';
 
-    // Save user's message
+    // Save user message
     await _firestore.collection('chats').doc(userId).collection(widget.subject).add({
       "sender": "user",
       "text": message,
@@ -48,7 +46,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
 
     setState(() => _isLoading = true);
 
-    // 🔑 Using unified function for AI response
+    // AI response
     final reply = await _geminiApiService.sendMessageWithOptionalImage(
       "$message (Subject: ${widget.subject})"
     );
@@ -64,62 +62,95 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
     setState(() => _isLoading = false);
   }
 
-  /// ✅ Upload and Process PDF to Flashcards
-  Future<void> uploadAndProcessPDF() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
-    if (result != null) {
-      File file = File(result.files.single.path!);
-      String userId = _auth.currentUser?.uid ?? '';
-
-      setState(() {
-        _isLoading = true;
-        _flashcards = [];
-      });
-
-      List<Map<String, String>> flashcards = await _geminiApiService.processPDF(file);
-      setState(() {
-        _isLoading = false;
-        _flashcards = flashcards.isNotEmpty ? flashcards : [{"question": "Error", "answer": "No flashcards generated."}];
-      });
-
-      // Save each flashcard as AI response
-      for (var flashcard in flashcards) {
-        await _firestore.collection('chats').doc(userId).collection(widget.subject).add({
-          "sender": "ai",
-          "text": "Q: ${cleanText(flashcard['question']!)}\nA: ${cleanText(flashcard['answer']!)}",
-          "timestamp": FieldValue.serverTimestamp(),
-        });
-      }
-    }
+  /// ✅ Unified File Picker (Image or PDF) + Command Prompt
+  Future<void> uploadFileAndGiveCommand() async {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Wrap(
+        children: [
+          ListTile(
+            leading: Icon(Icons.image, color: Colors.orange),
+            title: Text("Pick Image"),
+            onTap: () async {
+              Navigator.pop(context);
+              final ImagePicker picker = ImagePicker();
+              final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+              if (pickedFile != null) {
+                File imageFile = File(pickedFile.path);
+                _askCommandForFile(imageFile, isImage: true);
+              }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.picture_as_pdf, color: Colors.red),
+            title: Text("Pick PDF"),
+            onTap: () async {
+              Navigator.pop(context);
+              FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+              if (result != null) {
+                File pdfFile = File(result.files.single.path!);
+                _askCommandForFile(pdfFile, isImage: false);
+              }
+            },
+          ),
+        ],
+      ),
+    );
   }
 
-  /// ✅ Upload and Process Image using Gemini
-  Future<void> uploadAndProcessImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+  /// ✅ Ask command (prompt) for selected file (Image or PDF)
+  Future<void> _askCommandForFile(File file, {required bool isImage}) async {
+    final TextEditingController _promptController = TextEditingController();
 
-    if (pickedFile != null) {
-      File imageFile = File(pickedFile.path);
-      String userId = _auth.currentUser?.uid ?? '';
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Give command for ${isImage ? 'Image' : 'PDF'}"),
+        content: TextField(
+          controller: _promptController,
+          decoration: InputDecoration(hintText: "Example: Summarize this file or Generate flashcards"),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final command = _promptController.text.trim();
+              if (command.isNotEmpty) {
+                await _processFileWithCommand(file, command, isImage: isImage);
+              }
+            },
+            child: Text("Submit"),
+          ),
+        ],
+      ),
+    );
+  }
 
-      setState(() => _isLoading = true);
+  /// ✅ Handle File + Command and generate AI response
+  Future<void> _processFileWithCommand(File file, String command, {required bool isImage}) async {
+    String userId = _auth.currentUser?.uid ?? '';
 
-      // 🔑 Using unified function for AI response
-      String aiResponse = await _geminiApiService.sendMessageWithOptionalImage(
-        "Please analyze this image and answer relevant questions related to ${widget.subject}",
-        imageFile: imageFile,
-      );
-      String cleanedResponse = cleanText(aiResponse);
+    setState(() => _isLoading = true);
 
-      // Save AI response
-      await _firestore.collection('chats').doc(userId).collection(widget.subject).add({
-        "sender": "ai",
-        "text": cleanedResponse,
-        "timestamp": FieldValue.serverTimestamp(),
-      });
-
-      setState(() => _isLoading = false);
+    // Unified processing
+    String aiResponse;
+    if (isImage) {
+      aiResponse = await _geminiApiService.sendMessageWithOptionalImage(command, imageFile: file);
+    } else {
+      aiResponse = await _geminiApiService.sendMessageWithOptionalPdf(command, pdfFile: file);
     }
+
+    String cleanedResponse = cleanText(aiResponse);
+
+    // Save AI response
+    await _firestore.collection('chats').doc(userId).collection(widget.subject).add({
+      "sender": "ai",
+      "text": cleanedResponse,
+      "timestamp": FieldValue.serverTimestamp(),
+    });
+
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -130,7 +161,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
       appBar: AppBar(title: Text("${widget.subject} Chat")),
       body: Column(
         children: [
-          /// 🔹 Display Chat Messages
+          /// 🔹 Chat Messages
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _firestore
@@ -144,14 +175,12 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return Center(child: Text("No previous messages"));
 
                 final messages = snapshot.data!.docs;
-
                 return ListView.builder(
                   padding: const EdgeInsets.all(16.0),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final messageData = messages[index];
                     final isUser = messageData["sender"] == "user";
-
                     return Align(
                       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
@@ -161,10 +190,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
                           color: isUser ? Colors.blue[300] : Colors.grey[300],
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          messageData["text"],
-                          style: TextStyle(fontSize: 16, color: Colors.black),
-                        ),
+                        child: Text(messageData["text"], style: TextStyle(fontSize: 16)),
                       ),
                     );
                   },
@@ -172,29 +198,6 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
               },
             ),
           ),
-
-          /// 🔹 Flashcards Section
-          if (_flashcards.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            const Text("Generated Flashcards", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            ..._flashcards.map((flashcard) => Card(
-                  elevation: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Q: ${cleanText(flashcard['question']!)}", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
-                        const SizedBox(height: 8),
-                        Text("A: ${cleanText(flashcard['answer']!)}", style: TextStyle(fontSize: 16)),
-                      ],
-                    ),
-                  ),
-                )),
-          ],
 
           /// 🔹 Loading Indicator
           if (_isLoading)
@@ -207,7 +210,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
               ]),
             ),
 
-          /// 🔹 Input Field and Actions
+          /// 🔹 Input Field + Actions
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
@@ -215,20 +218,13 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: InputDecoration(
-                      labelText: "Enter your message",
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: InputDecoration(labelText: "Enter your message", border: OutlineInputBorder()),
                   ),
                 ),
                 SizedBox(width: 10),
                 IconButton(
-                  icon: Icon(Icons.upload_file, color: Colors.green, size: 28),
-                  onPressed: uploadAndProcessPDF,
-                ),
-                IconButton(
-                  icon: Icon(Icons.image, color: Colors.orange, size: 28),
-                  onPressed: uploadAndProcessImage, // ✅ Image Upload
+                  icon: Icon(Icons.upload_file, color: Colors.deepPurple, size: 28),
+                  onPressed: uploadFileAndGiveCommand, // ✅ Single button for both
                 ),
                 IconButton(
                   icon: Icon(Icons.send, color: Colors.blue, size: 28),

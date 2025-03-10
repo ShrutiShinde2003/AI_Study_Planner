@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:study_planner/config/api_keys.dart';
 
@@ -11,70 +12,84 @@ class GeminiApiService {
 
   GeminiApiService() {
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash', // ✅ Single multimodal model
+      model: 'gemini-1.5-flash',
       apiKey: apiKey,
       generationConfig: GenerationConfig(
-        temperature: 0.7,
+        temperature: 1,
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 8192,
+        responseMimeType: 'text/plain',
       ),
     );
   }
 
-  /// ✅ Unified method to handle Text and Image together.
+  /// ✅ Normal text message handler
   Future<String> sendMessageWithOptionalImage(String userInput, {File? imageFile}) async {
     try {
-      final List<Part> parts = [];
+      final chat = _model.startChat(history: []);
 
-      // ✅ If image is provided, add it
+      List<Content> parts = [];
+
       if (imageFile != null) {
         final bytes = await imageFile.readAsBytes();
         final mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
 
-        parts.add(DataPart(mimeType, bytes)); // Correct usage for multimodal
+        parts.add(Content.multi([
+          DataPart(mimeType, bytes),
+          TextPart(userInput),
+        ]));
+      } else {
+        parts.add(Content.text(userInput));
       }
 
-      // ✅ Add the user question as text part
-      parts.add(TextPart(userInput));
-
-      // ✅ Now create the content with "user" role
-      final content = Content('user', parts);
-
-      // ✅ Send the message and return AI response
-      final response = await _model.generateContent([content]);
-      final textResponse = response.text?.trim() ?? 'No response from AI.';
-      print('✅ AI Response: $textResponse');
-      return textResponse;
+      final response = await chat.sendMessage(parts.first);
+      return response.text?.trim() ?? "No response from AI.";
     } catch (e) {
-      print('❌ Error sending message: $e');
-      return "Error processing your request.";
+      return "❌ Error processing request: ${e.toString()}";
     }
   }
 
-  /// ✅ Process PDF file and generate flashcards
+  /// ✅ Handle PDF as text and send to AI with user's command
+  Future<String> sendMessageWithOptionalPdf(String userInput, {required File pdfFile}) async {
+    try {
+      final extractedText = await _extractTextFromPDF(pdfFile);
+
+      if (extractedText.isEmpty) {
+        return "❌ Failed to extract text from PDF.";
+      }
+
+      final chat = _model.startChat(history: []);
+      final combinedPrompt = "$userInput\n\nPDF Content:\n$extractedText";
+      final response = await chat.sendMessage(Content.text(combinedPrompt));
+
+      return response.text?.trim() ?? "No response from AI.";
+    } catch (e) {
+      return "❌ Error processing PDF: ${e.toString()}";
+    }
+  }
+
+  /// 🔹 Extract and process flashcards from AI based on PDF content
   Future<List<Map<String, String>>> processPDF(File file) async {
     try {
       final extractedText = await _extractTextFromPDF(file);
 
       if (extractedText.isEmpty) {
         return [
-          {"question": "Error", "answer": "PDF is empty or couldn't extract text."}
+          {"question": "Error", "answer": "PDF is empty or text could not be extracted."}
         ];
       }
 
-      final aiResponse = await sendMessageWithOptionalImage(
-        "Generate multiple flashcards covering all key concepts from this text. "
-        "Each flashcard should be formatted as:\n"
-        "Flashcard 1\nFront: [Question]\nBack: [Answer]\n\n"
-        "Here is the extracted text:\n\n$extractedText",
+      final responseText = await sendMessageWithOptionalPdf(
+        "Generate flashcards from this content. Format each as 'Front: Question' and 'Back: Answer'.",
+        pdfFile: file,
       );
 
-      final flashcards = _extractFlashcards(aiResponse);
+      final flashcards = _extractFlashcards(responseText);
       return flashcards.isNotEmpty
           ? flashcards
           : [
-              {"question": "Error", "answer": "No flashcards were generated. Try a different PDF."}
+              {"question": "Error", "answer": "No flashcards were generated."}
             ];
     } catch (e) {
       return [
@@ -83,7 +98,7 @@ class GeminiApiService {
     }
   }
 
-  /// ✅ Extract flashcards from AI response
+  /// 🔹 Extract flashcards from AI response text
   List<Map<String, String>> _extractFlashcards(String responseText) {
     final List<Map<String, String>> flashcards = [];
     final lines = responseText.split('\n').map((line) => line.trim().replaceAll('*', '')).toList();
@@ -107,7 +122,7 @@ class GeminiApiService {
     return flashcards;
   }
 
-  /// ✅ Extract and clean text from PDF
+  /// 🔹 Extract text from PDF for AI use
   Future<String> _extractTextFromPDF(File file) async {
     final bytes = await file.readAsBytes();
     final document = PdfDocument(inputBytes: bytes);
