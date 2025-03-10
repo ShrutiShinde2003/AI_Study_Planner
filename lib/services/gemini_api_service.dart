@@ -1,88 +1,81 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:mime/mime.dart';
+import 'package:study_planner/config/api_keys.dart';
 
 class GeminiApiService {
-  final String apiKey;
-  late GenerativeModel model;
+  final String apiKey = ApiKeys.geminiApiKey;
+  late final GenerativeModel _model;
 
-  GeminiApiService(this.apiKey) {
-    model = GenerativeModel(
-      model: 'gemini-1.5-flash',
+  GeminiApiService() {
+    _model = GenerativeModel(
+      model: 'gemini-1.5-flash', // ✅ Single multimodal model
       apiKey: apiKey,
       generationConfig: GenerationConfig(
-        temperature: 1,
+        temperature: 0.7,
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 8192,
-        responseMimeType: 'text/plain',
       ),
     );
   }
 
-  /// 🔹 Sends a message to Gemini AI and returns the response.
-  Future<String> sendMessage(String userInput) async {
+  /// ✅ Unified method to handle Text and Image together.
+  Future<String> sendMessageWithOptionalImage(String userInput, {File? imageFile}) async {
     try {
-      final chat = model.startChat(history: []);
-      final content = Content.text(userInput);
-      final response = await chat.sendMessage(content);
-      return response.text ?? "No response from Gemini AI.";
+      final List<Part> parts = [];
+
+      // ✅ If image is provided, add it
+      if (imageFile != null) {
+        final bytes = await imageFile.readAsBytes();
+        final mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
+
+        parts.add(DataPart(mimeType, bytes)); // Correct usage for multimodal
+      }
+
+      // ✅ Add the user question as text part
+      parts.add(TextPart(userInput));
+
+      // ✅ Now create the content with "user" role
+      final content = Content('user', parts);
+
+      // ✅ Send the message and return AI response
+      final response = await _model.generateContent([content]);
+      final textResponse = response.text?.trim() ?? 'No response from AI.';
+      print('✅ AI Response: $textResponse');
+      return textResponse;
     } catch (e) {
-      return "Error: ${e.toString()}";
+      print('❌ Error sending message: $e');
+      return "Error processing your request.";
     }
   }
 
-  /// 🔹 Processes a PDF file and generates flashcards.
+  /// ✅ Process PDF file and generate flashcards
   Future<List<Map<String, String>>> processPDF(File file) async {
     try {
-      // Read the PDF file
-      List<int> bytes = await file.readAsBytes();
-      final PdfDocument document = PdfDocument(inputBytes: bytes);
+      final extractedText = await _extractTextFromPDF(file);
 
-      // Extract text from all pages
-      StringBuffer extractedText = StringBuffer();
-      for (int i = 0; i < document.pages.count; i++) {
-        String pageText = PdfTextExtractor(document).extractText(startPageIndex: i);
-        extractedText.writeln(pageText.trim());
-      }
-
-      document.dispose(); // Free memory
-
-      // Clean extracted text (remove asterisks, extra spaces, and blank lines)
-      String cleanText = extractedText.toString()
-          .replaceAll('*', '') // Remove asterisks
-          .replaceAll(RegExp(r'\n\s*\n'), '\n') // Remove excessive blank lines
-          .trim();
-
-      if (cleanText.isEmpty) {
+      if (extractedText.isEmpty) {
         return [
-          {"question": "Error", "answer": "PDF is empty or text could not be extracted."}
+          {"question": "Error", "answer": "PDF is empty or couldn't extract text."}
         ];
       }
 
-      print("Extracted PDF Text: ${cleanText.substring(0, 500)}..."); // Debugging
-
-      // 🔹 Send extracted text to Gemini AI for flashcard generation
-      String responseText = await sendMessage(
+      final aiResponse = await sendMessageWithOptionalImage(
         "Generate multiple flashcards covering all key concepts from this text. "
-        "Each flashcard should be formatted as follows:\n"
+        "Each flashcard should be formatted as:\n"
         "Flashcard 1\nFront: [Question]\nBack: [Answer]\n\n"
-        "Flashcard 2\nFront: [Question]\nBack: [Answer]\n\n"
-        "Here is the extracted text:\n\n$cleanText",
+        "Here is the extracted text:\n\n$extractedText",
       );
 
-      print("AI Response: ${responseText.substring(0, 500)}..."); // Debugging
-
-      // 🔹 Extract flashcards from AI response
-      List<Map<String, String>> flashcards = extractFlashcards(responseText);
-
-      if (flashcards.isEmpty) {
-        return [
-          {"question": "Error", "answer": "No flashcards were generated. Try a different PDF."}
-        ];
-      }
-
-      return flashcards;
+      final flashcards = _extractFlashcards(aiResponse);
+      return flashcards.isNotEmpty
+          ? flashcards
+          : [
+              {"question": "Error", "answer": "No flashcards were generated. Try a different PDF."}
+            ];
     } catch (e) {
       return [
         {"question": "Error", "answer": "Failed to process PDF: $e"}
@@ -90,36 +83,42 @@ class GeminiApiService {
     }
   }
 
-  /// 🔹 Extracts flashcards from AI response
-  List<Map<String, String>> extractFlashcards(String text) {
-    List<Map<String, String>> flashcards = [];
-    List<String> lines = text.split('\n');
+  /// ✅ Extract flashcards from AI response
+  List<Map<String, String>> _extractFlashcards(String responseText) {
+    final List<Map<String, String>> flashcards = [];
+    final lines = responseText.split('\n').map((line) => line.trim().replaceAll('*', '')).toList();
 
     String? question;
     String? answer;
 
-    for (String line in lines) {
-      line = line.replaceAll('*', '').trim(); // Remove unwanted asterisks
-      if (line.isEmpty) continue;
-
-      if (line.startsWith("Flashcard")) {
-        if (question != null && answer != null) {
-          flashcards.add({"question": question, "answer": answer});
-        }
+    for (var line in lines) {
+      if (line.startsWith('Flashcard')) {
+        if (question != null && answer != null) flashcards.add({"question": question, "answer": answer});
         question = null;
         answer = null;
-      } else if (line.startsWith("Front:")) {
-        question = line.replaceFirst("Front:", "").trim();
-      } else if (line.startsWith("Back:")) {
-        answer = line.replaceFirst("Back:", "").trim();
+      } else if (line.startsWith('Front:')) {
+        question = line.replaceFirst('Front:', '').trim();
+      } else if (line.startsWith('Back:')) {
+        answer = line.replaceFirst('Back:', '').trim();
       }
     }
 
-    // Add the last flashcard if valid
-    if (question != null && answer != null) {
-      flashcards.add({"question": question, "answer": answer});
+    if (question != null && answer != null) flashcards.add({"question": question, "answer": answer});
+    return flashcards;
+  }
+
+  /// ✅ Extract and clean text from PDF
+  Future<String> _extractTextFromPDF(File file) async {
+    final bytes = await file.readAsBytes();
+    final document = PdfDocument(inputBytes: bytes);
+    final buffer = StringBuffer();
+
+    for (int i = 0; i < document.pages.count; i++) {
+      final text = PdfTextExtractor(document).extractText(startPageIndex: i);
+      buffer.writeln(text.trim());
     }
 
-    return flashcards;
+    document.dispose();
+    return buffer.toString().replaceAll('*', '').replaceAll(RegExp(r'\n\s*\n'), '\n').trim();
   }
 }
