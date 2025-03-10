@@ -1,0 +1,2 @@
+C:/Final_Project/AI_Study_Planner/android/app/.cxx/Debug/6130y3d1/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Final_Project/AI_Study_Planner/android/app/.cxx/Debug/6130y3d1/armeabi-v7a/CMakeFiles/rebuild_cache.dir

@@ -1,10 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:study_planner/components/my_textfield.dart';
 import 'package:study_planner/components/my_button.dart';
 import 'package:study_planner/models/user_model.dart';
-import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/bottom_navigation.dart';
 import 'package:study_planner/pages/dashboard.dart';
 import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
@@ -68,10 +67,9 @@ class _RegisterPageState extends State<RegisterPage> {
               Text(
                 'Let\'s create an account for you',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold
-                ),
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(height: 10),
@@ -249,6 +247,10 @@ class _RegisterPageState extends State<RegisterPage> {
                         uid: uid,
                         userName: userNameController.text.trim(),
                         email: emailController.text.trim(),
+                        subjects: [], // Initialize subjects
+                        followers: [], // Initialize empty followers list
+                        following: [], // Initialize empty following list
+                        profileImage:  "", // ✅ Initialize profileImage as an empty string (or use a default image path)
                       );
 
                       // Add the user data to Firestore using the UID as the document ID
@@ -266,9 +268,11 @@ class _RegisterPageState extends State<RegisterPage> {
                         MaterialPageRoute(
                           builder: (context) => BottomNavigation(
                             homePage: HomePage(),
-                            todoPage: TodoListPage(),
+                            todoPage: ToDoListPage(), // ✅ FIXED
                             dashboardPage: DashboardPage(),
-                            profilePage: ProfilePage(),
+                            profilePage: ProfilePage(
+                              userId: '',
+                            ),
                             GeminiPage: ChatScreen(),
                           ), // Ensure LoginPage exists
                         ),
@@ -314,7 +318,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 children: [
                   Text(
                     'Already a member?',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: Colors.indigo),
                   ),
                   const SizedBox(width: 4),
                   GestureDetector(
@@ -322,7 +326,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: const Text(
                       'Login now',
                       style: TextStyle(
-                        color: Colors.indigo,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

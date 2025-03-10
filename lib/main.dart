@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/bottom_navigation.dart';
 import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
 import 'package:study_planner/pages/login_page.dart';
@@ -26,16 +26,33 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: user != null
-          ? BottomNavigation(
-              homePage: HomePage(),
-              todoPage: TodoListPage(),
-              dashboardPage: DashboardPage(),
-              GeminiPage: ChatScreen(),
-              profilePage: ProfilePage(),
-              
-            )
-          : const WelcomePage(), // Replace with your actual login page
+      home: AuthWrapper(), // Handle user authentication
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(), // Listen for auth state changes
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        if (snapshot.hasData && snapshot.data != null) {
+          String userId = snapshot.data!.uid; // Get logged-in user's ID
+          return BottomNavigation(
+            homePage: HomePage(),
+            todoPage: ToDoListPage(),
+            dashboardPage: DashboardPage(),
+            GeminiPage: ChatScreen(),
+            profilePage:ProfilePage(userId: '',)
+          );
+        } else {
+          return const WelcomePage(); // Show login page if no user is signed in
+        }
+      },
     );
   }
 }

@@ -1,124 +1,123 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:study_planner/pages/task_card.dart';
-import '../models/user_model.dart'; // Import TaskModel
-import '../pages/task_card.dart'; // Import TaskCard UI
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/firestore_service(tasks).dart';
 
 class NotesPage extends StatefulWidget {
-  final String subject;
-
-  NotesPage({required this.subject});
-
   @override
   _NotesPageState createState() => _NotesPageState();
 }
 
 class _NotesPageState extends State<NotesPage> {
-  TextEditingController taskController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
-  TextEditingController dueDateController = TextEditingController();
+  final TextEditingController _taskNameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  DateTime? _selectedDueDate;
+  final FirestoreService _firestoreService = FirestoreService();
+  String? _selectedSubject;
+  List<String> _subjects = [];
 
-  final FirebaseAuth auth = FirebaseAuth.instance;
-  CollectionReference ref = FirebaseFirestore.instance.collection('tasks');
+  @override
+  void initState() {
+    super.initState();
+    _fetchSubjects();
+  }
 
-  // Function to add task to Firebase
-  void addTaskToFirebase() async {
-    if (taskController.text.isNotEmpty &&
-        descriptionController.text.isNotEmpty &&
-        dueDateController.text.isNotEmpty) {
-      final user = auth.currentUser!;
-      String uid = user.uid;
+  // 🔹 Fetch subjects from Firestore
+  Future<void> _fetchSubjects() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-      // Create a TaskModel instance
-      UserModel newTask =  TodoItem (
-        uid: uid,
-        subject: widget.subject,
-        task: taskController.text.trim(),
-        description: descriptionController.text.trim(),
-        dueDate: dueDateController.text.trim(),
-        timeCreated: DateTime.now(),
-      );
+    DocumentSnapshot userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
 
-      // Add the task data to Firestore using the generated document ID
-      await ref.add(newTask.toMap()).then((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Task Added Successfully!")),
-        );
-        taskController.clear();
-        descriptionController.clear();
-        dueDateController.clear();
-      }).catchError((error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error adding task: $error")),
-        );
+    if (userDoc.exists && userDoc.data() != null) {
+      List<String> subjects = List<String>.from(userDoc['subjects'] ?? []);
+      setState(() {
+        _subjects = subjects;
+        if (_subjects.isNotEmpty) {
+          _selectedSubject = _subjects.first;
+        }
       });
     }
+  }
+
+  void _addTask() async {
+    if (_taskNameController.text.isEmpty ||
+        _selectedDueDate == null ||
+        _selectedSubject == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please fill in all fields")),
+      );
+      return;
+    }
+
+    await _firestoreService.addTask(
+      _selectedSubject!,
+      _taskNameController.text,
+      _descriptionController.text,
+      _selectedDueDate!,
+    );
+
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Tasks for ${widget.subject}")),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                TextField(
-                  controller: taskController,
-                  decoration: InputDecoration(labelText: "Enter Task"),
-                ),
-                TextField(
-                  controller: descriptionController,
-                  decoration: InputDecoration(labelText: "Enter Description"),
-                ),
-                TextField(
-                  controller: dueDateController,
-                  decoration: InputDecoration(
-                    labelText: "Enter Due Date",
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: addTaskToFirebase,
-                  child: Text("Add Task"),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('tasks')
-                  .where("subject", isEqualTo: widget.subject)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(child: Text("No tasks found"));
-                }
-
-                var tasks = snapshot.data!.docs.map((doc) {
-                  return TaskModel.fromMap(doc.data() as Map<String, dynamic>);
-                }).toList();
-
-                return ListView.builder(
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    return TaskCard(task: tasks[index]);
-                  },
-                );
+      appBar: AppBar(title: Text("Add Task")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // 🔹 Subject Dropdown
+            DropdownButtonFormField<String>(
+              value: _selectedSubject,
+              onChanged: (value) {
+                setState(() {
+                  _selectedSubject = value!;
+                });
               },
+              items: _subjects
+                  .map((subject) => DropdownMenuItem(
+                        value: subject,
+                        child: Text(subject),
+                      ))
+                  .toList(),
+              decoration: InputDecoration(labelText: "Select Subject"),
             ),
-          ),
-        ],
+
+            TextField(controller: _taskNameController, decoration: InputDecoration(labelText: "Task Name")),
+            TextField(controller: _descriptionController, decoration: InputDecoration(labelText: "Description")),
+            SizedBox(height: 10),
+
+            ElevatedButton(
+              onPressed: () => _selectDate(context),
+              child: Text(_selectedDueDate == null ? "Select Due Date" : "Due: ${_selectedDueDate!.toLocal()}"),
+            ),
+
+            SizedBox(height: 20),
+
+            ElevatedButton(
+              onPressed: _addTask,
+              child: Text("Add Task"),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDueDate = picked;
+      });
+    }
   }
 }

@@ -1,15 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:study_planner/components/my_textfield.dart';
 import 'package:study_planner/components/my_button.dart';
-import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/bottom_navigation.dart';
 import 'package:study_planner/pages/dashboard.dart';
 import 'package:study_planner/pages/forgot_pw_page.dart';
 import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
 import 'package:study_planner/pages/profile_page.dart';
 import 'package:study_planner/pages/register_page.dart';
-import 'package:study_planner/pages/todo_list.dart'; // Import your Register Page here
+import 'package:study_planner/pages/todo_list.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -48,11 +47,11 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(
           builder: (context) => BottomNavigation(
             homePage: HomePage(),
-            todoPage: TodoListPage(),
-            dashboardPage: DashboardPage(),
-            profilePage: ProfilePage(),
+            dashboardPage: DashboardPage(), // ✅ Added missing parameter
+            todoPage: ToDoListPage(),
+            profilePage: ProfilePage(userId: ''),
             GeminiPage: ChatScreen(),
-          ), // Ensure LoginPage exists
+          ),
         ),
       );
     } on FirebaseAuthException catch (e) {
@@ -233,10 +232,7 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const Text(
                     'Not a member?',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: Colors.indigo),
                   ),
                   const SizedBox(width: 4),
                   GestureDetector(
@@ -244,7 +240,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: const Text(
                       'Register now',
                       style: TextStyle(
-                        color: Colors.indigo,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
