@@ -42,7 +42,6 @@ class _ToDoListPageState extends State<ToDoListPage> with SingleTickerProviderSt
 
     try {
       DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
-
       if (userDoc.exists && userDoc.data() != null) {
         List<String> subjects = List<String>.from(userDoc['subjects'] ?? []);
         setState(() {
@@ -86,76 +85,56 @@ class _ToDoListPageState extends State<ToDoListPage> with SingleTickerProviderSt
                 ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => NotesPage()),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => NotesPage()));
         },
         child: Icon(Icons.add),
       ),
     );
   }
 
+  /// 🔥 Task List Builder
   Widget _buildTaskList({required String filterType}) {
-    if (_subjects.isEmpty) {
-      return Center(child: Text("No subjects available."));
-    }
+    final user = _auth.currentUser;
+    if (user == null) return Center(child: Text("User not authenticated"));
 
     return StreamBuilder<QuerySnapshot>(
       stream: _firestore
           .collection('tasks')
-          .where('uid', isEqualTo: _auth.currentUser?.uid)
-          .where('subject', whereIn: _subjects.isNotEmpty ? _subjects : ['dummy'])
+          .where('uid', isEqualTo: user.uid)
+          .where('subject', whereIn: _subjects.isNotEmpty ? _subjects : ['dummy']) // Fix empty subject case
+          .orderBy('dueDate', descending: false) // Use indexed order
           .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
+        if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return Center(child: Text("No tasks available"));
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          print("ℹ️ No tasks found for filter: $filterType");
-          return Center(child: Text("No tasks available"));
-        }
-
-        var now = DateTime.now();
+        DateTime now = DateTime.now();
         var tasks = snapshot.data!.docs.where((taskDoc) {
-          var taskData = taskDoc.data() as Map<String, dynamic>;
-          bool isCompleted = taskData['isCompleted'] ?? false;
-          DateTime? dueDate = (taskData['dueDate'] as Timestamp?)?.toDate();
+          var data = taskDoc.data() as Map<String, dynamic>;
+          bool isCompleted = data['isCompleted'] ?? false;
+          DateTime? dueDate = (data['dueDate'] as Timestamp?)?.toDate();
 
-          print("🔍 Task: ${taskData['taskName']}, Due: ${dueDate?.toString()}");
-
-          if (filterType == "past_due") {
-            return dueDate != null && dueDate.isBefore(now) && !isCompleted;
-          } else if (filterType == "completed") {
-            return isCompleted;
-          } else if (filterType == "forthcoming") {
-            return dueDate != null && dueDate.isAfter(now) && !isCompleted;
-          }
+          if (filterType == "past_due") return dueDate != null && dueDate.isBefore(now) && !isCompleted;
+          if (filterType == "completed") return isCompleted;
+          if (filterType == "forthcoming") return dueDate != null && dueDate.isAfter(now) && !isCompleted;
           return false;
         }).toList();
 
-        if (tasks.isEmpty) {
-          print("ℹ️ Tasks filtered out for category: $filterType");
-          return Center(child: Text("No tasks in this category"));
-        }
+        if (tasks.isEmpty) return Center(child: Text("No tasks in this category"));
 
         return ListView.builder(
           itemCount: tasks.length,
           itemBuilder: (context, index) {
             var taskDoc = tasks[index];
             var taskData = taskDoc.data() as Map<String, dynamic>;
-
             DateTime? dueDate = (taskData['dueDate'] as Timestamp?)?.toDate();
-            String formattedDate = dueDate != null
-                ? DateFormat('dd MMM yyyy, hh:mm a').format(dueDate)
-                : 'No Due Date';
+            String formattedDate = dueDate != null ? DateFormat('dd MMM yyyy, hh:mm a').format(dueDate) : 'No Due Date';
 
             return TaskCard(
               taskId: taskDoc.id,
               taskData: {...taskData, 'dueDate': formattedDate},
               onCompleteTask: () async {
-                await completeTask(taskDoc.id);
+                await _toggleTaskCompletion(taskDoc.id, taskData['isCompleted'] ?? false);
                 _updateCompletedTasksCount();
               },
             );
@@ -165,43 +144,36 @@ class _ToDoListPageState extends State<ToDoListPage> with SingleTickerProviderSt
     );
   }
 
-  /// 🔥 Mark task as completed or uncompleted
-  Future<void> completeTask(String taskId) async {
+  /// 🔥 Toggle task completion (Mark complete/uncomplete)
+  Future<void> _toggleTaskCompletion(String taskId, bool isCurrentlyCompleted) async {
     try {
-      final docRef = _firestore.collection('tasks').doc(taskId);
-      final doc = await docRef.get();
-      final isCompleted = doc['isCompleted'] ?? false;
-
-      await docRef.update({
-        'isCompleted': !isCompleted,
-        'completedAt': !isCompleted ? FieldValue.serverTimestamp() : null,
+      await _firestore.collection('tasks').doc(taskId).update({
+        'isCompleted': !isCurrentlyCompleted,
+        'completedAt': !isCurrentlyCompleted ? FieldValue.serverTimestamp() : null,
       });
+      print("✅ Task completion toggled: ${!isCurrentlyCompleted}");
     } catch (e) {
-      print("❌ Error completing/uncompleting task: $e");
+      print("❌ Error toggling task completion: $e");
     }
   }
 
-  /// ✅ Update Completed Tasks Count in Firestore (for HomePage)
+  /// ✅ Update completed tasks count for homepage
   Future<void> _updateCompletedTasksCount() async {
     final user = _auth.currentUser;
     if (user == null) return;
 
     try {
-      QuerySnapshot completedTasksSnapshot = await _firestore
+      QuerySnapshot completedTasks = await _firestore
           .collection('tasks')
           .where('uid', isEqualTo: user.uid)
           .where('isCompleted', isEqualTo: true)
           .get();
 
-      int completedCount = completedTasksSnapshot.docs.length;
-
-      await _firestore.collection('users').doc(user.uid).update({
-        'completedTasksCount': completedCount,
-      });
-
-      print("✅ Updated completed tasks count: $completedCount");
+      int completedCount = completedTasks.docs.length;
+      await _firestore.collection('users').doc(user.uid).update({'completedTasksCount': completedCount});
+      print("✅ Completed tasks count updated: $completedCount");
     } catch (e) {
-      print("❌ Error updating completed tasks count: $e");
+      print("❌ Error updating completed task count: $e");
     }
   }
 }
