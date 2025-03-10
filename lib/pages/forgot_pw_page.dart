@@ -50,7 +50,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               child: MyTextField(
                 controller: emailController,
                 hintText: 'Email',
-                obsureText: false,
+                obscureText: false,
               ),
             ),
             const SizedBox(height: 10),

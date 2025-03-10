@@ -1,10 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:study_planner/components/my_textfield.dart';
 import 'package:study_planner/components/my_button.dart';
 import 'package:study_planner/models/user_model.dart';
-import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/bottom_navigation.dart';
 import 'package:study_planner/pages/dashboard.dart';
 import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
@@ -266,7 +265,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         MaterialPageRoute(
                           builder: (context) => BottomNavigation(
                             homePage: HomePage(),
-                            todoPage: ToDoListPage(subjects: [], subject: '',),
+                            todoPage: ToDoListPage(subjects: []), // ✅ FIXED
                             dashboardPage: DashboardPage(),
                             profilePage: ProfilePage(userId: '',),
                             GeminiPage: ChatScreen(),

@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:study_planner/pages/todo_list.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
-  final String userId; // Accept userId
+  final String userId;
 
   ProfilePage({required this.userId});
 
@@ -12,156 +15,180 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  List<String> subjects = []; // List to store subjects
-  TextEditingController subjectController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String userName = "";
+  String email = "";
+  String profileImagePath = "";
+  List<String> subjects = [];
+  TextEditingController _subjectController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    fetchSubjects(); // Load subjects from Firestore
+    fetchUserData();
+    loadProfileImage();
+    fetchSubjects();
   }
 
-  // Function to fetch subjects from Firestore
-  void fetchSubjects() async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.userId)
-        .get();
+  void fetchUserData() async {
+    String userId = _auth.currentUser?.uid ?? '';
+    if (userId.isEmpty) return;
 
+    DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
     if (userDoc.exists) {
       setState(() {
-        subjects = List<String>.from(userDoc['subjects'] ?? []);
+        userName = userDoc['userName'] ?? 'No Name';
+        email = userDoc['email'] ?? 'No Email';
       });
     }
   }
 
-  // Function to add a new subject to Firestore
-  void addSubject() async {
-    if (subjectController.text.isNotEmpty) {
-      setState(() {
-        subjects.add(subjectController.text);
-      });
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.userId)
-          .update({'subjects': subjects}); // Update Firestore
-
-      subjectController.clear();
-    }
-  }
-
-  // Function to edit a subject in Firestore
-  void editSubject(int index) {
-    subjectController.text = subjects[index];
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Edit Subject"),
-          content: TextField(
-            controller: subjectController,
-            decoration: InputDecoration(hintText: "Enter subject name"),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                setState(() {
-                  subjects[index] = subjectController.text;
-                });
-
-                await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(widget.userId)
-                    .update({'subjects': subjects}); // Update Firestore
-
-                subjectController.clear();
-                Navigator.pop(context);
-              },
-              child: Text("Save"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Function to delete a subject from Firestore
-  void deleteSubject(int index) async {
+  Future<void> loadProfileImage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      subjects.removeAt(index);
+      profileImagePath = prefs.getString('profileImagePath') ?? '';
+    });
+  }
+
+  void fetchSubjects() async {
+    String userId = _auth.currentUser?.uid ?? '';
+    if (userId.isEmpty) return;
+
+    DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+    if (userDoc.exists && userDoc.data() != null) {
+      List<dynamic> subjectsData = userDoc['subjects'] ?? [];
+      setState(() {
+        subjects = subjectsData.cast<String>();
+      });
+    }
+  }
+
+  void addSubject() async {
+    String newSubject = _subjectController.text.trim();
+    if (newSubject.isEmpty) return;
+
+    String userId = _auth.currentUser?.uid ?? '';
+    if (userId.isEmpty) return;
+
+    DocumentReference userDocRef = _firestore.collection('users').doc(userId);
+
+    await userDocRef.update({
+      'subjects': FieldValue.arrayUnion([newSubject])
     });
 
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.userId)
-        .update({'subjects': subjects}); // Update Firestore
+    setState(() {
+      subjects.add(newSubject);
+    });
+
+    _subjectController.clear();
   }
 
+void deleteSubject(String subject) async {
+  String userId = _auth.currentUser?.uid ?? '';
+  if (userId.isEmpty) return;
+
+  setState(() {
+    subjects.remove(subject);  // Update UI immediately
+  });
+
+  DocumentReference userDocRef = _firestore.collection('users').doc(userId);
+
+  await userDocRef.update({
+    'subjects': FieldValue.arrayRemove([subject])
+  });
+
+  // Delete all tasks related to this subject
+  QuerySnapshot tasksSnapshot = await _firestore
+      .collection('tasks')
+      .where('userId', isEqualTo: userId)
+      .where('subject', isEqualTo: subject)
+      .get();
+
+  for (QueryDocumentSnapshot taskDoc in tasksSnapshot.docs) {
+    await _firestore.collection('tasks').doc(taskDoc.id).delete();
+  }
+}
+
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Profile - Subjects")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+Widget build(BuildContext context) {
+  return Scaffold(
+    resizeToAvoidBottomInset: true, // ✅ Allows scrolling when keyboard appears
+    appBar: AppBar(
+      title: Text("Profile"),
+      automaticallyImplyLeading: false,  // 🚀 Removes the back button
+      actions: [
+        IconButton(
+          icon: Icon(Icons.settings),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => SettingsPage()),
+            );
+          },
+        ),
+      ],
+    ),
+    body: SingleChildScrollView( // ✅ Prevents overflow
+      child: Padding(
+        padding: EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            TextField(
-              controller: subjectController,
-              decoration: InputDecoration(
-                labelText: "Enter Subject",
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.add),
-                  onPressed: addSubject,
-                ),
+            GestureDetector(
+              onTap: () {},
+              child: CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.grey.shade300,
+                backgroundImage: profileImagePath.isNotEmpty
+                    ? (profileImagePath.contains("assets/")
+                        ? AssetImage(profileImagePath) as ImageProvider
+                        : FileImage(File(profileImagePath)))
+                    : null,
+                child: profileImagePath.isEmpty
+                    ? Icon(Icons.person, size: 40, color: Colors.white)
+                    : null,
               ),
             ),
+            SizedBox(height: 10),
+            Text(userName, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(email, style: TextStyle(fontSize: 16, color: Colors.grey)),
             SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                itemCount: subjects.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(subjects[index]),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => editSubject(index),
-                        ),
-                        IconButton(
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text("Subjects:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+            subjects.isEmpty
+                ? Text("No subjects added", style: TextStyle(color: Colors.grey))
+                : Column(
+                    children: subjects.map((subject) {
+                      return ListTile(
+                        leading: Icon(Icons.book, color: Colors.blue),
+                        title: Text(subject, style: TextStyle(fontSize: 16)),
+                        trailing: IconButton(
                           icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => deleteSubject(index),
+                          onPressed: () => deleteSubject(subject),
                         ),
-                      ],
-                    ),
-                  );
-                },
+                      );
+                    }).toList(),
+                  ),
+            SizedBox(height: 10),
+            TextField(
+              controller: _subjectController,
+              decoration: InputDecoration(
+                labelText: "Add Subject",
+                border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 10),
             ElevatedButton(
-              onPressed: () {
-                if (subjects.isNotEmpty) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ToDoListPage(subjects: subjects, subject: ''),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Please add at least one subject!")),
-                  );
-                }
-              },
-              child: Text("Go to To-Do List"),
+              onPressed: addSubject,
+              child: Text("Add Subject"),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

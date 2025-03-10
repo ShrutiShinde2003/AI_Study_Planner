@@ -1,8 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:study_planner/components/my_textfield.dart';
 import 'package:study_planner/components/my_button.dart';
-import 'package:study_planner/pages/botton_navigation.dart';
+import 'package:study_planner/pages/bottom_navigation.dart';
 import 'package:study_planner/pages/dashboard.dart';
 import 'package:study_planner/pages/forgot_pw_page.dart';
 import 'package:study_planner/pages/gemini_ai.dart';
@@ -48,11 +47,11 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(
           builder: (context) => BottomNavigation(
             homePage: HomePage(),
-            todoPage: ToDoListPage(subject:'', subjects: [], ),
-            dashboardPage: DashboardPage(),  
-            profilePage: ProfilePage(userId: '',),
+            dashboardPage: DashboardPage(), // ✅ Added missing parameter
+            todoPage: ToDoListPage(subjects: []),
+            profilePage: ProfilePage(userId: ''),
             GeminiPage: ChatScreen(),
-          ), // Ensure LoginPage exists
+          ),
         ),
       );
     } on FirebaseAuthException catch (e) {
@@ -92,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.indigo.shade200, // background color
@@ -218,7 +217,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               const SizedBox(height: 10),
-
 
               // Sign in button
               MyButton(
