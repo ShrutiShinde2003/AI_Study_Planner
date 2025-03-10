@@ -86,51 +86,39 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                GestureDetector(
-                  onTap: () async {
-                    String? updatedImage = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => EditProfilePage()),
-                    );
-                    if (updatedImage != null) {
-                      setState(() {
-                        profileImagePath = updatedImage;
-                      });
-                    }
-                  },
-                  child: StreamBuilder<DocumentSnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(FirebaseAuth.instance.currentUser!.uid)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData || snapshot.data == null) {
-                        return CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.grey.shade300,
-                          child:
-                              Icon(Icons.person, size: 40, color: Colors.white),
-                        );
-                      }
-
-                      var userData =
-                          snapshot.data!.data() as Map<String, dynamic>;
-                      String imageUrl = userData['profileImage'] ?? '';
-
+                StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(FirebaseAuth.instance.currentUser!.uid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData || snapshot.data == null) {
                       return CircleAvatar(
                         radius: 50,
-                        backgroundImage: imageUrl.isNotEmpty
-                            ? (imageUrl.contains("assets/")
-                                ? AssetImage(imageUrl) as ImageProvider
-                                : FileImage(File(imageUrl)))
-                            : null,
-                        child: imageUrl.isEmpty
-                            ? Icon(Icons.person, size: 40, color: Colors.white)
-                            : null,
+                        backgroundColor: Colors.grey.shade300,
+                        child:
+                            Icon(Icons.person, size: 40, color: Colors.white),
                       );
-                    },
-                  ),
+                    }
+
+                    var userData =
+                        snapshot.data!.data() as Map<String, dynamic>;
+                    String imageUrl = userData['profileImage'] ?? '';
+
+                    return CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.grey.shade300,
+                      backgroundImage: imageUrl.isNotEmpty
+                          ? (imageUrl.startsWith('http') ||
+                                  imageUrl.startsWith('assets/')
+                              ? NetworkImage(imageUrl) as ImageProvider
+                              : FileImage(File(imageUrl)))
+                          : null,
+                      child: imageUrl.isEmpty
+                          ? Icon(Icons.person, size: 40, color: Colors.white)
+                          : null,
+                    );
+                  },
                 ),
                 SizedBox(height: 10),
                 Text(userName,
