@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/task_card.dart';
 import 'notes_page.dart';
 import 'package:intl/intl.dart';
+import '../services/gamification_service.dart'; // ✅ Import Gamification Service
 
 class ToDoListPage extends StatefulWidget {
   ToDoListPage();
@@ -12,18 +13,20 @@ class ToDoListPage extends StatefulWidget {
   _ToDoListPageState createState() => _ToDoListPageState();
 }
 
-class _ToDoListPageState extends State<ToDoListPage>
-    with SingleTickerProviderStateMixin {
+class _ToDoListPageState extends State<ToDoListPage> with SingleTickerProviderStateMixin {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GamificationService _gamificationService = GamificationService(); // ✅ Initialize service
+
   List<String> _subjects = [];
   late TabController _tabController;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchSubjects();
     _tabController = TabController(length: 3, vsync: this);
+    _fetchSubjects();
   }
 
   @override
@@ -32,19 +35,28 @@ class _ToDoListPageState extends State<ToDoListPage>
     super.dispose();
   }
 
-  // 🔹 Fetch subjects from Firestore
+  /// 🔹 Fetch subjects from Firestore
   Future<void> _fetchSubjects() async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      setState(() => isLoading = false);
+      return;
+    }
 
-    DocumentSnapshot userDoc =
-        await _firestore.collection('users').doc(user.uid).get();
-
-    if (userDoc.exists && userDoc.data() != null) {
-      List<String> subjects = List<String>.from(userDoc['subjects'] ?? []);
-      setState(() {
-        _subjects = subjects;
-      });
+    try {
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (userDoc.exists && userDoc.data() != null) {
+        List<String> subjects = List<String>.from(userDoc['subjects'] ?? []);
+        setState(() {
+          _subjects = subjects;
+          isLoading = false;
+        });
+      } else {
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print("❌ Error fetching subjects: $e");
+      setState(() => isLoading = false);
     }
   }
 
@@ -62,109 +74,115 @@ class _ToDoListPageState extends State<ToDoListPage>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildTaskList(filterType: "past_due"),
-          _buildTaskList(filterType: "completed"),
-          _buildTaskList(filterType: "forthcoming"),
-        ],
-      ),
-
-      // ✅ Floating Action Button to Open Notes Page
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : _subjects.isEmpty
+              ? Center(child: Text("No subjects available. Please add subjects."))
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildTaskList(filterType: "past_due"),
+                    _buildTaskList(filterType: "completed"),
+                    _buildTaskList(filterType: "forthcoming"),
+                  ],
+                ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => NotesPage()),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => NotesPage()));
         },
         child: Icon(Icons.add),
       ),
     );
   }
 
+  /// 🔥 Task List Builder
   Widget _buildTaskList({required String filterType}) {
-    return FutureBuilder(
-      future: _fetchSubjects(), // Ensure subjects are loaded
+    final user = _auth.currentUser;
+    if (user == null) return Center(child: Text("User not authenticated"));
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestore
+          .collection('tasks')
+          .where('uid', isEqualTo: user.uid)
+          .where('subject', whereIn: _subjects.isNotEmpty ? _subjects : ['dummy']) // Fix empty subject case
+          .orderBy('dueDate', descending: false) // Use indexed order
+          .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-              child:
-                  CircularProgressIndicator()); // Show loading until subjects are fetched
-        }
+        if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return Center(child: Text("No tasks available"));
 
-        if (_subjects.isEmpty) {
-          return Center(
-              child: Text("No subjects found")); // Prevent empty filter query
-        }
+        DateTime now = DateTime.now();
+        var tasks = snapshot.data!.docs.where((taskDoc) {
+          var data = taskDoc.data() as Map<String, dynamic>;
+          bool isCompleted = data['isCompleted'] ?? false;
+          DateTime? dueDate = (data['dueDate'] as Timestamp?)?.toDate();
 
-        return StreamBuilder<QuerySnapshot>(
-          stream: _firestore
-              .collection('tasks')
-              .where('uid', isEqualTo: _auth.currentUser?.uid)
-              .where('subject', whereIn: _subjects)
-              .orderBy('dueDate', descending: false)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData)
-              return Center(child: CircularProgressIndicator());
+          if (filterType == "past_due") return dueDate != null && dueDate.isBefore(now) && !isCompleted;
+          if (filterType == "completed") return isCompleted;
+          if (filterType == "forthcoming") return dueDate != null && dueDate.isAfter(now) && !isCompleted;
+          return false;
+        }).toList();
 
-            var tasks = snapshot.data!.docs.where((taskDoc) {
-              var taskData = taskDoc.data() as Map<String, dynamic>;
-              bool isCompleted = taskData['isCompleted'] ?? false;
-              DateTime? dueDate = (taskData['dueDate'] as Timestamp?)?.toDate();
-              DateTime now = DateTime.now();
+        if (tasks.isEmpty) return Center(child: Text("No tasks in this category"));
 
-              if (filterType == "past_due") {
-                return dueDate != null && dueDate.isBefore(now) && !isCompleted;
-              } else if (filterType == "completed") {
-                return isCompleted;
-              } else if (filterType == "forthcoming") {
-                return dueDate != null && dueDate.isAfter(now) && !isCompleted;
-              }
-              return false;
-            }).toList();
+        return ListView.builder(
+          itemCount: tasks.length,
+          itemBuilder: (context, index) {
+            var taskDoc = tasks[index];
+            var taskData = taskDoc.data() as Map<String, dynamic>;
+            DateTime? dueDate = (taskData['dueDate'] as Timestamp?)?.toDate();
+            String formattedDate = dueDate != null ? DateFormat('dd MMM yyyy, hh:mm a').format(dueDate) : 'No Due Date';
 
-            if (tasks.isEmpty) return Center(child: Text("No tasks available"));
-
-            return ListView.builder(
-              itemCount: tasks.length,
-              itemBuilder: (context, index) {
-                var taskDoc = tasks[index];
-                var taskData = taskDoc.data() as Map<String, dynamic>;
-
-                DateTime? dueDate =
-                    (taskData['dueDate'] as Timestamp?)?.toDate();
-                String formattedDate = dueDate != null
-                    ? DateFormat('dd MMM yyyy, hh:mm a').format(dueDate)
-                    : 'No Due Date';
-
-                return Dismissible(
-                  key: Key(taskDoc.id),
-                  background: Container(
-                    color: Colors.red,
-                    alignment: Alignment.centerRight,
-                    padding: EdgeInsets.only(right: 20),
-                    child: Icon(Icons.delete, color: Colors.white),
-                  ),
-                  onDismissed: (direction) async {
-                    await _firestore
-                        .collection('tasks')
-                        .doc(taskDoc.id)
-                        .delete();
-                    setState(() {}); // Ensure UI updates after delete
-                  },
-                  child: TaskCard(
-                    taskId: taskDoc.id,
-                    taskData: {...taskData, 'dueDate': formattedDate},
-                  ),
-                );
+            return TaskCard(
+              taskId: taskDoc.id,
+              taskData: {...taskData, 'dueDate': formattedDate},
+              onCompleteTask: () async {
+                await _toggleTaskCompletion(taskDoc.id, taskData['isCompleted'] ?? false);
+                _updateCompletedTasksCount();
               },
             );
           },
         );
       },
     );
+  }
+
+  /// 🔥 Toggle task completion (Mark complete/uncomplete + XP & Rewards)
+  Future<void> _toggleTaskCompletion(String taskId, bool isCurrentlyCompleted) async {
+    try {
+      await _firestore.collection('tasks').doc(taskId).update({
+        'isCompleted': !isCurrentlyCompleted,
+        'completedAt': !isCurrentlyCompleted ? FieldValue.serverTimestamp() : null,
+      });
+
+      // ✅ Update XP & progress only when marking as completed
+      if (!isCurrentlyCompleted) {
+        await _gamificationService.updateUserProgress();
+      }
+
+      print("✅ Task completion toggled: ${!isCurrentlyCompleted}");
+    } catch (e) {
+      print("❌ Error toggling task completion: $e");
+    }
+  }
+
+  /// ✅ Update completed tasks count for homepage
+  Future<void> _updateCompletedTasksCount() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      QuerySnapshot completedTasks = await _firestore
+          .collection('tasks')
+          .where('uid', isEqualTo: user.uid)
+          .where('isCompleted', isEqualTo: true)
+          .get();
+
+      int completedCount = completedTasks.docs.length;
+      await _firestore.collection('users').doc(user.uid).update({'completedTasksCount': completedCount});
+      print("✅ Completed tasks count updated: $completedCount");
+    } catch (e) {
+      print("❌ Error updating completed task count: $e");
+    }
   }
 }

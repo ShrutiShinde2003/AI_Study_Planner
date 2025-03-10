@@ -1,44 +1,29 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ Import Firestore
 
-class TodoItem {
+class Task {
   final String id;
-  final String uid;
-  final String subject;
   final String taskName;
-  final String description;
+  final String subject;
   final DateTime dueDate;
   final bool isCompleted;
 
-  TodoItem({
+  Task({
     required this.id,
-    required this.uid,
-    required this.subject,
     required this.taskName,
-    required this.description,
+    required this.subject,
     required this.dueDate,
     required this.isCompleted,
   });
 
-  factory TodoItem.fromMap(Map<String, dynamic> data, String documentId) {
-    return TodoItem(
-      id: documentId,
-      uid: data['uid'] ?? '',
-      subject: data['subject'] ?? '',
-      taskName: data['taskName'] ?? '',
-      description: data['description'] ?? '',
-      dueDate: DateTime.parse(data['dueDate'] ?? DateTime.now().toIso8601String()),
+  // 🔹 Convert Firestore Document to `Task`
+  factory Task.fromFirestore(DocumentSnapshot doc) { // ✅ Now recognized
+    Map data = doc.data() as Map<String, dynamic>;
+    return Task(
+      id: doc.id,
+      taskName: data['taskName'] ?? 'No Task Name',
+      subject: data['subject'] ?? 'No Subject',
+      dueDate: (data['dueDate'] as Timestamp).toDate(),
       isCompleted: data['isCompleted'] ?? false,
     );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'uid': uid,
-      'subject': subject,
-      'taskName': taskName,
-      'description': description,
-      'dueDate': dueDate.toIso8601String(),
-      'isCompleted': isCompleted,
-    };
   }
 }
