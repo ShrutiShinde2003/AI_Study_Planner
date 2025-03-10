@@ -12,7 +12,8 @@ class ToDoListPage extends StatefulWidget {
   _ToDoListPageState createState() => _ToDoListPageState();
 }
 
-class _ToDoListPageState extends State<ToDoListPage> with SingleTickerProviderStateMixin {
+class _ToDoListPageState extends State<ToDoListPage>
+    with SingleTickerProviderStateMixin {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<String> _subjects = [];
@@ -84,63 +85,82 @@ class _ToDoListPageState extends State<ToDoListPage> with SingleTickerProviderSt
   }
 
   Widget _buildTaskList({required String filterType}) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _subjects.isNotEmpty
-          ? _firestore
+    return FutureBuilder(
+      future: _fetchSubjects(), // Ensure subjects are loaded
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+              child:
+                  CircularProgressIndicator()); // Show loading until subjects are fetched
+        }
+
+        if (_subjects.isEmpty) {
+          return Center(
+              child: Text("No subjects found")); // Prevent empty filter query
+        }
+
+        return StreamBuilder<QuerySnapshot>(
+          stream: _firestore
               .collection('tasks')
               .where('uid', isEqualTo: _auth.currentUser?.uid)
-              .where('subject', whereIn: _subjects) // 🔹 Filter only existing subjects
+              .where('subject', whereIn: _subjects)
               .orderBy('dueDate', descending: false)
-              .snapshots()
-          : null,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData)
+              return Center(child: CircularProgressIndicator());
 
-        var tasks = snapshot.data!.docs.where((taskDoc) {
-          var taskData = taskDoc.data() as Map<String, dynamic>;
-          bool isCompleted = taskData['isCompleted'] ?? false;
-          DateTime? dueDate = (taskData['dueDate'] as Timestamp?)?.toDate();
-          DateTime now = DateTime.now();
+            var tasks = snapshot.data!.docs.where((taskDoc) {
+              var taskData = taskDoc.data() as Map<String, dynamic>;
+              bool isCompleted = taskData['isCompleted'] ?? false;
+              DateTime? dueDate = (taskData['dueDate'] as Timestamp?)?.toDate();
+              DateTime now = DateTime.now();
 
-          if (filterType == "past_due") {
-            return dueDate != null && dueDate.isBefore(now) && !isCompleted;
-          } else if (filterType == "completed") {
-            return isCompleted;
-          } else if (filterType == "forthcoming") {
-            return dueDate != null && dueDate.isAfter(now) && !isCompleted;
-          }
-          return false;
-        }).toList();
+              if (filterType == "past_due") {
+                return dueDate != null && dueDate.isBefore(now) && !isCompleted;
+              } else if (filterType == "completed") {
+                return isCompleted;
+              } else if (filterType == "forthcoming") {
+                return dueDate != null && dueDate.isAfter(now) && !isCompleted;
+              }
+              return false;
+            }).toList();
 
-        if (tasks.isEmpty) return Center(child: Text("No tasks available"));
+            if (tasks.isEmpty) return Center(child: Text("No tasks available"));
 
-        return ListView.builder(
-          itemCount: tasks.length,
-          itemBuilder: (context, index) {
-            var taskDoc = tasks[index];
-            var taskData = taskDoc.data() as Map<String, dynamic>;
+            return ListView.builder(
+              itemCount: tasks.length,
+              itemBuilder: (context, index) {
+                var taskDoc = tasks[index];
+                var taskData = taskDoc.data() as Map<String, dynamic>;
 
-            DateTime? dueDate = (taskData['dueDate'] as Timestamp?)?.toDate();
-            String formattedDate = dueDate != null
-                ? DateFormat('dd MMM yyyy, hh:mm a').format(dueDate)
-                : 'No Due Date';
+                DateTime? dueDate =
+                    (taskData['dueDate'] as Timestamp?)?.toDate();
+                String formattedDate = dueDate != null
+                    ? DateFormat('dd MMM yyyy, hh:mm a').format(dueDate)
+                    : 'No Due Date';
 
-            return Dismissible(
-              key: Key(taskDoc.id),
-              background: Container(
-                color: Colors.red,
-                alignment: Alignment.centerRight,
-                padding: EdgeInsets.only(right: 20),
-                child: Icon(Icons.delete, color: Colors.white),
-              ),
-              onDismissed: (direction) async {
-                await _firestore.collection('tasks').doc(taskDoc.id).delete();
-                setState(() {});
+                return Dismissible(
+                  key: Key(taskDoc.id),
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.only(right: 20),
+                    child: Icon(Icons.delete, color: Colors.white),
+                  ),
+                  onDismissed: (direction) async {
+                    await _firestore
+                        .collection('tasks')
+                        .doc(taskDoc.id)
+                        .delete();
+                    setState(() {}); // Ensure UI updates after delete
+                  },
+                  child: TaskCard(
+                    taskId: taskDoc.id,
+                    taskData: {...taskData, 'dueDate': formattedDate},
+                  ),
+                );
               },
-              child: TaskCard(
-                taskId: taskDoc.id,
-                taskData: {...taskData, 'dueDate': formattedDate},
-              ),
             );
           },
         );

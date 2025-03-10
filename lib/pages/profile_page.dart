@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'settings_page.dart';
 import 'edit_profile_page.dart';
 import 'search_users_page.dart';
@@ -26,14 +25,11 @@ class _ProfilePageState extends State<ProfilePage> {
   String profileImagePath = "";
   int followingCount = 0;
   int followersCount = 0;
-  List<String> subjects = [];
-  TextEditingController _subjectController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     fetchUserData();
-    fetchSubjects();
   }
 
   void fetchUserData() async {
@@ -59,93 +55,8 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void fetchSubjects() async {
-    String userId = _auth.currentUser?.uid ?? '';
-    if (userId.isEmpty) return;
-
-    DocumentSnapshot userDoc =
-        await _firestore.collection('users').doc(userId).get();
-    if (userDoc.exists && userDoc.data() != null) {
-      List<dynamic> subjectsData = userDoc['subjects'] ?? [];
-      setState(() {
-        subjects = subjectsData.cast<String>();
-      });
-    }
-  }
-
-  void addSubject() async {
-    String newSubject = _subjectController.text.trim();
-    if (newSubject.isEmpty) return;
-
-    String userId = _auth.currentUser?.uid ?? '';
-    if (userId.isEmpty) return;
-
-    DocumentReference userDocRef = _firestore.collection('users').doc(userId);
-
-    await userDocRef.update({
-      'subjects': FieldValue.arrayUnion([newSubject])
-    });
-
-    setState(() {
-      subjects.add(newSubject);
-    });
-
-    _subjectController.clear();
-  }
-
-  void deleteSubject(String subject) async {
-    bool? confirmDelete = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Are you sure?"),
-        content: Text(
-            "Deleting this subject will remove all related tasks permanently."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text("Delete", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmDelete == null || !confirmDelete) return;
-
-    String userId = _auth.currentUser?.uid ?? '';
-    if (userId.isEmpty) return;
-
-    setState(() {
-      subjects.remove(subject);
-    });
-
-    DocumentReference userDocRef = _firestore.collection('users').doc(userId);
-
-    await userDocRef.update({
-      'subjects': FieldValue.arrayRemove([subject])
-    });
-
-    QuerySnapshot tasksSnapshot = await _firestore
-        .collection('tasks')
-        .where('userId', isEqualTo: userId)
-        .where('subject', isEqualTo: subject)
-        .get();
-
-    for (QueryDocumentSnapshot taskDoc in tasksSnapshot.docs) {
-      await _firestore.collection('tasks').doc(taskDoc.id).delete();
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Subject and all related tasks deleted")),
-    );
-  }
-
   Future<void> refreshProfile() async {
     fetchUserData(); // Refresh user data
-    fetchSubjects(); // Refresh subjects list
   }
 
   @override
@@ -277,37 +188,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     );
                   },
                   child: Text("Add Friends"),
-                ),
-                SizedBox(height: 20),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text("Subjects:",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                ),
-                subjects.isEmpty
-                    ? Text("No subjects added",
-                        style: TextStyle(color: Colors.grey))
-                    : Column(
-                        children: subjects.map((subject) {
-                          return ListTile(
-                            leading: Icon(Icons.book, color: Colors.blue),
-                            title:
-                                Text(subject, style: TextStyle(fontSize: 16)),
-                            trailing: IconButton(
-                              icon: Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => deleteSubject(subject),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                TextField(
-                  controller: _subjectController,
-                  decoration: InputDecoration(labelText: "Add Subject"),
-                ),
-                ElevatedButton(
-                  onPressed: addSubject,
-                  child: Text("Add Subject"),
                 ),
               ],
             ),
