@@ -5,15 +5,14 @@ class TaskCard extends StatelessWidget {
   final String taskId;
   final Map<String, dynamic> taskData;
   final VoidCallback? onCompleteTask;
-  final VoidCallback? onDeleteTask;
 
   TaskCard({
     required this.taskId,
     required this.taskData,
     this.onCompleteTask,
-    this.onDeleteTask,
   });
 
+  /// 🔄 Toggle task completion status
   Future<void> _toggleTaskCompletion(String taskId, bool currentStatus) async {
     try {
       await FirebaseFirestore.instance.collection('tasks').doc(taskId).update({
@@ -38,34 +37,29 @@ class TaskCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: ListTile(
         contentPadding: EdgeInsets.all(10),
-        leading: Icon(
-          isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-          color: isCompleted ? Colors.green : Colors.grey,
+        leading: GestureDetector(
+          onTap: () => _toggleTaskCompletion(taskId, isCompleted),
+          child: Icon(
+            isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+            color: isCompleted ? Colors.green : Colors.grey,
+            size: 28,
+          ),
         ),
         title: Text(
           taskName,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             decoration: isCompleted ? TextDecoration.lineThrough : null,
+            fontSize: 16,
           ),
         ),
-        subtitle: Text("Due: $dueDate"),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!isCompleted)
-              IconButton(
-                icon: Icon(Icons.check, color: Colors.green),
-                onPressed: () {
-                  _toggleTaskCompletion(taskId, isCompleted);
-                },
-              ),
-            IconButton(
-              icon: Icon(Icons.delete, color: Colors.red),
-              onPressed: onDeleteTask,
-            ),
-          ],
+        subtitle: Text(
+          "Due: $dueDate",
+          style: TextStyle(
+            color: Colors.grey[600],
+          ),
         ),
+        // ❌ Removed trailing delete button
       ),
     );
   }

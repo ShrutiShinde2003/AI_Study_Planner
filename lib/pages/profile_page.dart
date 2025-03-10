@@ -37,44 +37,27 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void fetchUserData() async {
-  String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-  if (userId.isEmpty) return;
+    String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    if (userId.isEmpty) return;
 
-  DocumentSnapshot userDoc =
-      await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    DocumentSnapshot userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
-  if (userDoc.exists) {
-    setState(() {
-      userName = userDoc['userName'] ?? 'No Name';
-      email = userDoc['email'] ?? 'No Email';
-    });
-
-    // Fetch followers separately
-    FirebaseFirestore.instance
-        .collection('users')
-        .where('following', arrayContains: userId) // Find users who follow me
-        .get()
-        .then((followersSnapshot) {
+    if (userDoc.exists) {
       setState(() {
-        followersCount = followersSnapshot.docs.length;
-      });
-    });
+        userName = userDoc['userName'] ?? 'No Name';
+        email = userDoc['email'] ?? 'No Email';
 
-    // Fetch following separately
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .get()
-        .then((userSnapshot) {
-      List<dynamic> followingList = userSnapshot['following'] ?? [];
-      setState(() {
+        // ✅ Get followers count directly from Firestore
+        List<dynamic> followersList = userDoc['followers'] ?? [];
+        followersCount = followersList.length;
+
+        // ✅ Get following count directly from Firestore
+        List<dynamic> followingList = userDoc['following'] ?? [];
         followingCount = followingList.length;
       });
-    });
+    }
   }
-}
-
-
 
   void fetchSubjects() async {
     String userId = _auth.currentUser?.uid ?? '';
@@ -160,11 +143,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-Future<void> refreshProfile() async {
-  fetchUserData(); // Refresh user data
-  fetchSubjects(); // Refresh subjects list
-}
-
+  Future<void> refreshProfile() async {
+    fetchUserData(); // Refresh user data
+    fetchSubjects(); // Refresh subjects list
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +179,8 @@ Future<void> refreshProfile() async {
                   onTap: () async {
                     String? updatedImage = await Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => EditProfilePage()),
+                      MaterialPageRoute(
+                          builder: (context) => EditProfilePage()),
                     );
                     if (updatedImage != null) {
                       setState(() {
@@ -219,11 +202,11 @@ Future<void> refreshProfile() async {
                               Icon(Icons.person, size: 40, color: Colors.white),
                         );
                       }
-        
+
                       var userData =
                           snapshot.data!.data() as Map<String, dynamic>;
                       String imageUrl = userData['profileImage'] ?? '';
-        
+
                       return CircleAvatar(
                         radius: 50,
                         backgroundImage: imageUrl.isNotEmpty
@@ -240,10 +223,10 @@ Future<void> refreshProfile() async {
                 ),
                 SizedBox(height: 10),
                 Text(userName,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 Text(email, style: TextStyle(fontSize: 16, color: Colors.grey)),
                 SizedBox(height: 20),
-        
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -284,33 +267,33 @@ Future<void> refreshProfile() async {
                     ),
                   ],
                 ),
-        
                 SizedBox(height: 20),
-        
                 ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => SearchUsersPage()),
+                      MaterialPageRoute(
+                          builder: (context) => SearchUsersPage()),
                     );
                   },
                   child: Text("Add Friends"),
                 ),
-        
                 SizedBox(height: 20),
-        
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text("Subjects:",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
                 subjects.isEmpty
-                    ? Text("No subjects added", style: TextStyle(color: Colors.grey))
+                    ? Text("No subjects added",
+                        style: TextStyle(color: Colors.grey))
                     : Column(
                         children: subjects.map((subject) {
                           return ListTile(
                             leading: Icon(Icons.book, color: Colors.blue),
-                            title: Text(subject, style: TextStyle(fontSize: 16)),
+                            title:
+                                Text(subject, style: TextStyle(fontSize: 16)),
                             trailing: IconButton(
                               icon: Icon(Icons.delete, color: Colors.red),
                               onPressed: () => deleteSubject(subject),

@@ -32,12 +32,12 @@ class FirestoreService {
     if (user != null) {
       try {
         await _taskCollection.add({
-          'uid': user.uid,          // ✅ Store User ID
-          'subject': subject,       // ✅ Fixed field name (was `subjectName`)
-          'taskName': taskName,     // ✅ Task Name
-          'description': description, // ✅ Task Description
+          'uid': user.uid,                // ✅ Store User ID
+          'subject': subject,             // ✅ Subject
+          'taskName': taskName,           // ✅ Task Name
+          'description': description,     // ✅ Task Description
           'dueDate': Timestamp.fromDate(dueDate), // ✅ Store as Firestore Timestamp
-          'isCompleted': false, // ✅ Default: Task is Pending
+          'isCompleted': false,           // ✅ Default: Task is Pending
           'createdAt': FieldValue.serverTimestamp(), // ✅ Auto-generated Timestamp
         });
 
@@ -51,7 +51,7 @@ class FirestoreService {
     }
   }
 
-  // 🔹 Update Task (Ensure Only the Owner Can Update)
+  // 🔹 Update Task (Ensure Only the Owner Can Update & prevent uid changes)
   Future<void> updateTask(String taskId, Map<String, dynamic> updatedData) async {
     final user = _auth.currentUser;
     if (user != null) {
@@ -60,6 +60,11 @@ class FirestoreService {
         
         if (!taskSnapshot.exists || taskSnapshot['uid'] != user.uid) {
           throw Exception("Unauthorized: You can only update your own tasks.");
+        }
+
+        // ⚠️ Prevent 'uid' field from being altered
+        if (updatedData.containsKey('uid') && updatedData['uid'] != user.uid) {
+          throw Exception("Cannot change task ownership.");
         }
 
         await _taskCollection.doc(taskId).update(updatedData);

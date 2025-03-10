@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:study_planner/services/firestore_service(users).dart';
 
 class FollowersPage extends StatelessWidget {
+  final FirebaseService firebaseService = FirebaseService();
+
   @override
   Widget build(BuildContext context) {
-    String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    String userId = FirebaseAuth.instance.currentUser!.uid;
 
     return Scaffold(
       appBar: AppBar(title: Text("Followers")),
@@ -15,67 +19,97 @@ class FollowersPage extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           }
-
           if (snapshot.hasError) {
             return Center(child: Text("Error: ${snapshot.error}"));
           }
-
           if (!snapshot.hasData || !snapshot.data!.exists) {
             return Center(child: Text("No data found"));
           }
 
           var userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-          List<dynamic> followers = userData['followers'] ?? [];
+          List<String> followers = List<String>.from(userData['followers'] ?? []);
 
           if (followers.isEmpty) {
             return Center(child: Text("No followers yet"));
           }
 
-          return ListView.builder(
-            itemCount: followers.length,
-            itemBuilder: (context, index) {
-              String followerUserId = followers[index] ?? ''; // Ensure it's a valid string
-              if (followerUserId.isEmpty) {
-                return SizedBox(); // Skip empty user IDs
-              }
+          return _buildFollowersList(followers);
+        },
+      ),
+    );
+  }
 
-              return FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance.collection('users').doc(followerUserId).get(),
-                builder: (context, userSnapshot) {
-                  if (userSnapshot.connectionState == ConnectionState.waiting) {
-                    return ListTile(title: Text("Loading..."));
-                  }
+  Widget _buildFollowersList(List<String> followerIds) {
+    if (followerIds.isEmpty) {
+      return Center(child: Text("No followers yet"));
+    }
 
-                  if (userSnapshot.hasError) {
-                    return ListTile(title: Text("Error loading user"));
-                  }
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .where(FieldPath.documentId,
+              whereIn: followerIds.length > 10 ? followerIds.sublist(0, 10) : followerIds)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text("Error loading followers"));
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text("No followers found"));
+        }
 
-                  if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-                    return ListTile(
-                      title: Text("User not found"),
-                      subtitle: Text("This user may have deleted their account"),
-                      leading: Icon(Icons.error, color: Colors.red),
+        var followers = snapshot.data!.docs;
+
+        return ListView.builder(
+          itemCount: followers.length,
+          itemBuilder: (context, index) {
+            var followerData = followers[index].data() as Map<String, dynamic>? ?? {};
+            String followerUserId = followers[index].id;
+
+            return ListTile(
+              leading: FutureBuilder<String?>(
+                future: firebaseService.getFollowerProfileImage(followerUserId, followerData['profileImage']), // ✅ FIXED
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircleAvatar(
+                      backgroundColor: Colors.grey[300],
+                      child: Icon(Icons.person, color: Colors.white),
                     );
                   }
 
-                  var followerData = userSnapshot.data!.data() as Map<String, dynamic>? ?? {};
+                  String? imagePath = snapshot.data;
+                  bool imageExists = imagePath != null && File(imagePath).existsSync();
 
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: followerData['profileImage'] != null
-                          ? NetworkImage(followerData['profileImage'])
-                          : null,
-                      child: followerData['profileImage'] == null ? Icon(Icons.person) : null,
-                    ),
-                    title: Text(followerData['userName'] ?? "Unknown"),
-                    subtitle: Text(followerData['email'] ?? ""),
+                  print("Follower: $followerUserId -> Image Path: $imagePath | Exists: $imageExists");
+
+                  return CircleAvatar(
+                    backgroundImage: imageExists ? FileImage(File(imagePath!)) : null,
+                    child: !imageExists ? Icon(Icons.person, color: Colors.white) : null,
+                    backgroundColor: Colors.grey[300],
                   );
                 },
-              );
-            },
-          );
-        },
-      ),
+              ),
+              title: Text(followerData['userName'] ?? "Unknown"),
+              subtitle: Text(followerData['email'] ?? ""),
+              trailing: ElevatedButton(
+                onPressed: () {
+                  firebaseService.removeFollower(
+                      FirebaseAuth.instance.currentUser!.uid, followerUserId);
+                },
+                child: Text("Remove"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
