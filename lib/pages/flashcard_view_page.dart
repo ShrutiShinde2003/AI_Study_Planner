@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/flashcard_model.dart';
-import '../pages/interactive_flashcard.dart';
+import '../pages/interactive_flashcard.dart'; // ✅ Importing from widgets folder
 
 class FlashcardViewPage extends StatelessWidget {
   final List<Flashcard> flashcards;
@@ -13,14 +13,12 @@ class FlashcardViewPage extends StatelessWidget {
       appBar: AppBar(title: const Text("Flashcards")),
       body: flashcards.isEmpty
           ? const Center(child: Text("No flashcards generated."))
-          : PageView.builder(
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
               itemCount: flashcards.length,
-              controller: PageController(viewportFraction: 0.85),
               itemBuilder: (context, index) {
                 return InteractiveFlashcard(
-                  flashcard: flashcards[index],
-                  onKnown: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Marked as Known!'))),
-                  onReview: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Marked for Review!'))),
+                  flashcard: flashcards[index], // ✅ Flip card only, no swipe/move
                 );
               },
             ),
