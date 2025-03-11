@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:study_planner/services/gemini_api_service.dart';
 import 'package:study_planner/models/flashcard_model.dart';
 import 'package:study_planner/pages/flashcard_view_page.dart';
-import '../pages/interactive_flashcard.dart';
 
 class ChatSubjectScreen extends StatefulWidget {
   final String subject;
@@ -31,16 +30,12 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
     _geminiApiService = GeminiApiService();
   }
 
-  /// ✅ Send Text Message
+  /// ✅ Send text message and AI reply
   Future<void> sendMessage(String message) async {
     if (message.isEmpty) return;
     String userId = _auth.currentUser!.uid;
 
-    await _firestore.collection('chats').doc(userId).collection(widget.subject).add({
-      "sender": "user",
-      "text": message,
-      "timestamp": FieldValue.serverTimestamp(),
-    });
+    await _saveMessage(userId, message, "user");
 
     setState(() => _isLoading = true);
 
@@ -48,16 +43,12 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
       "$message (Subject: ${widget.subject})",
     );
 
-    await _firestore.collection('chats').doc(userId).collection(widget.subject).add({
-      "sender": "ai",
-      "text": reply.trim(),
-      "timestamp": FieldValue.serverTimestamp(),
-    });
+    await _saveMessage(userId, reply.trim(), "ai");
 
     setState(() => _isLoading = false);
   }
 
-  /// ✅ Unified File Picker + Command
+  /// ✅ File picker & command ask
   Future<void> uploadFileAndCommand() async {
     final picker = ImagePicker();
 
@@ -88,7 +79,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
     );
   }
 
-  /// ✅ Command Prompt for File
+  /// ✅ Command input dialog
   Future<void> _askCommand(File file, {required bool isImage}) async {
     final TextEditingController _promptController = TextEditingController();
 
@@ -98,7 +89,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
         title: Text("Command for ${isImage ? 'Image' : 'PDF'}"),
         content: TextField(
           controller: _promptController,
-          decoration: InputDecoration(hintText: "e.g., Summarize or Generate Flashcards"),
+          decoration: InputDecoration(hintText: "e.g., Summarize, Generate Flashcards"),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text("Cancel")),
@@ -115,32 +106,59 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
     );
   }
 
-  /// ✅ Process File & Redirect to Flashcards
+  /// ✅ Process file with AI & handle response based on command
   Future<void> _processFile(File file, String command, bool isImage) async {
     String userId = _auth.currentUser!.uid;
     setState(() => _isLoading = true);
 
+    String response = "";
     List<Flashcard> flashcards = [];
 
     if (isImage) {
-      String response = await _geminiApiService.sendMessageWithOptionalImage(command, imageFile: file);
-      flashcards = _geminiApiService.extractFlashcards(response);
+      response = await _geminiApiService.sendMessageWithOptionalImage(command, imageFile: file);
     } else {
-      flashcards = await _geminiApiService.processPDF(file);
+      // If PDF and asking for flashcards
+      if (command.toLowerCase().contains('flashcard')) {
+        flashcards = await _geminiApiService.processPDF(file);
+      } else {
+        // Summarize/Analyze other commands
+        response = await _geminiApiService.sendMessageWithOptionalPdf(command, pdfFile: file);
+      }
     }
 
     setState(() => _isLoading = false);
 
-    if (flashcards.isNotEmpty) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => FlashcardViewPage(flashcards: flashcards)),
-      );
+    if (command.toLowerCase().contains('flashcard')) {
+      // Show flashcards if generated
+      if (flashcards.isNotEmpty) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => FlashcardViewPage(flashcards: flashcards)),
+        );
+      } else {
+        _showSnackBar("Failed to generate flashcards.");
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to generate flashcards.')));
+      // Else, show response as chat message
+      await _saveMessage(userId, response.trim(), "ai");
     }
   }
 
+  /// ✅ Save chat message to Firestore
+  Future<void> _saveMessage(String userId, String text, String sender) async {
+    await _firestore.collection('chats').doc(userId).collection(widget.subject).add({
+      "sender": sender,
+      "text": text,
+      "timestamp": FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// ✅ Show snack bar
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// ✅ Main build
   @override
   Widget build(BuildContext context) {
     String userId = _auth.currentUser!.uid;
@@ -149,16 +167,17 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
       appBar: AppBar(title: Text("${widget.subject} Chat")),
       body: Column(
         children: [
-          /// Chat Stream
+          /// 🔹 Chat Messages
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _firestore.collection('chats').doc(userId).collection(widget.subject).orderBy('timestamp').snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
 
+                final messages = snapshot.data!.docs;
                 return ListView(
                   padding: const EdgeInsets.all(16),
-                  children: snapshot.data!.docs.map((msg) {
+                  children: messages.map((msg) {
                     final isUser = msg['sender'] == 'user';
                     return Align(
                       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -178,7 +197,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
             ),
           ),
 
-          /// Loader
+          /// 🔹 Loading Spinner
           if (_isLoading)
             Padding(
               padding: const EdgeInsets.all(8),
@@ -189,7 +208,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
               ]),
             ),
 
-          /// Input + Actions
+          /// 🔹 Input & Actions
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(

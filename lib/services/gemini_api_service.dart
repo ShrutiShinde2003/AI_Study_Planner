@@ -4,7 +4,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:mime/mime.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:study_planner/config/api_keys.dart';
-import 'package:study_planner/models/flashcard_model.dart'; // ✅ Import Flashcard model
+import 'package:study_planner/models/flashcard_model.dart';
 
 class GeminiApiService {
   final String apiKey = ApiKeys.geminiApiKey;
@@ -15,7 +15,7 @@ class GeminiApiService {
       model: 'gemini-1.5-flash',
       apiKey: apiKey,
       generationConfig: GenerationConfig(
-        temperature: 1,
+        temperature: 0.7,
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 8192,
@@ -24,22 +24,22 @@ class GeminiApiService {
     );
   }
 
-  /// ✅ Send message with optional image to Gemini AI
+  /// ✅ Text message & Optional Image for Q&A or Flashcard if asked
   Future<String> sendMessageWithOptionalImage(String userInput, {File? imageFile}) async {
     final chat = _model.startChat();
-
     List<Part> parts = [TextPart(userInput)];
+
     if (imageFile != null) {
       final bytes = await imageFile.readAsBytes();
       final mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
-      parts.add(DataPart(mimeType, bytes)); // Correct Part type
+      parts.add(DataPart(mimeType, bytes));
     }
 
     final response = await chat.sendMessage(Content('user', parts));
     return response.text ?? "No response from AI.";
   }
 
-  /// ✅ Send message with optional PDF content to Gemini AI
+  /// ✅ Message & PDF Text for Summary/QA/Flashcard
   Future<String> sendMessageWithOptionalPdf(String userInput, {required File pdfFile}) async {
     final extractedText = await _extractTextFromPDF(pdfFile);
     final chat = _model.startChat();
@@ -53,7 +53,7 @@ class GeminiApiService {
     return response.text ?? "No response from AI.";
   }
 
-  /// ✅ Extract and clean text from PDF file
+  /// ✅ Extract Text from PDF
   Future<String> _extractTextFromPDF(File file) async {
     final bytes = await file.readAsBytes();
     final document = PdfDocument(inputBytes: bytes);
@@ -64,12 +64,11 @@ class GeminiApiService {
       buffer.writeln(text.trim());
     }
 
-    document.dispose(); // Release memory
-
+    document.dispose();
     return buffer.toString().replaceAll('*', '').replaceAll(RegExp(r'\n\s*\n'), '\n').trim();
   }
 
-  /// ✅ Process PDF and generate multiple flashcards using AI
+  /// ✅ Process PDF for Flashcards (When explicitly asked)
   Future<List<Flashcard>> processPDF(File file) async {
     final extractedText = await _extractTextFromPDF(file);
 
@@ -80,65 +79,63 @@ class GeminiApiService {
     }
 
     final chat = _model.startChat();
-
-    // Strong prompt for multi-flashcard generation
-    final prompt = '''
-Generate as many flashcards as possible from this text. 
-Each flashcard must be formatted exactly like this:
-
-Flashcard 1
-Front: [Question]
-Back: [Answer]
-
-Flashcard 2
-Front: [Question]
-Back: [Answer]
-
-Here is the text:
-$extractedText
-''';
+    final prompt = "Generate multiple flashcards covering all key concepts from this text. "
+        "Each flashcard should be formatted as follows:\n"
+        "Flashcard 1\nFront: [Question]\nBack: [Answer]\n\n"
+        "Here is the extracted text:\n$extractedText";
 
     final response = await chat.sendMessage(Content('user', [TextPart(prompt)]));
-
-    // Proper parsing
-    final flashcards = extractFlashcards(response.text ?? '');
+    final flashcards = extractFlashcards(response.text ?? "");
 
     return flashcards.isNotEmpty
         ? flashcards
         : [
             Flashcard(
               question: "Error",
-              answer: "No flashcards were generated. Please try a different file.",
+              answer: "No flashcards were generated. Try different content.",
             )
           ];
   }
 
-  /// ✅ Parse multiple flashcards from AI response
+  /// ✅ Extract Flashcards for Image or PDF (Based on AI response)
   List<Flashcard> extractFlashcards(String responseText) {
     final List<Flashcard> flashcards = [];
+    final lines = responseText.split('\n').map((line) => line.trim().replaceAll('*', '')).toList();
 
-    // Split on "Flashcard" keyword
-    final rawFlashcards = responseText.split(RegExp(r'Flashcard\s*\d*', caseSensitive: false));
+    String? question;
+    String? answer;
 
-    for (var raw in rawFlashcards) {
-      if (raw.trim().isEmpty) continue;
-
-      String? question;
-      String? answer;
-
-      // Match question and answer
-      final frontMatch = RegExp(r'Front:\s*(.*)', caseSensitive: false).firstMatch(raw);
-      final backMatch = RegExp(r'Back:\s*(.*)', caseSensitive: false).firstMatch(raw);
-
-      if (frontMatch != null) question = frontMatch.group(1)?.trim();
-      if (backMatch != null) answer = backMatch.group(1)?.trim();
-
-      // Only add valid flashcards
-      if (question != null && answer != null && question.isNotEmpty && answer.isNotEmpty) {
-        flashcards.add(Flashcard(question: question, answer: answer));
+    for (var line in lines) {
+      if (line.toLowerCase().startsWith('flashcard')) {
+        if (question != null && answer != null) {
+          flashcards.add(Flashcard(question: question, answer: answer));
+        }
+        question = null;
+        answer = null;
+      } else if (line.toLowerCase().startsWith('front:')) {
+        question = line.replaceFirst(RegExp(r'front:', caseSensitive: false), '').trim();
+      } else if (line.toLowerCase().startsWith('back:')) {
+        answer = line.replaceFirst(RegExp(r'back:', caseSensitive: false), '').trim();
       }
     }
 
+    // ✅ Add the last flashcard if present
+    if (question != null && answer != null) {
+      flashcards.add(Flashcard(question: question, answer: answer));
+    }
+
     return flashcards;
+  }
+
+  /// ✅ General Purpose Analyzer: Check if Flashcard Generation Command
+  bool isFlashcardCommand(String command) {
+    final lowerCommand = command.toLowerCase();
+    return lowerCommand.contains("flashcard") || lowerCommand.contains("generate flashcards");
+  }
+
+  /// ✅ General Purpose Analyzer: Check if Summary Command
+  bool isSummaryCommand(String command) {
+    final lowerCommand = command.toLowerCase();
+    return lowerCommand.contains("summarize") || lowerCommand.contains("summary");
   }
 }
