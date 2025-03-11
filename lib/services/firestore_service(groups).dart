@@ -1,92 +1,103 @@
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import '../models/group_model.dart';
-// import '../models/message_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../models/message_model.dart';
 
-// class FirebaseGroupService {
-//   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-//   final FirebaseAuth _auth = FirebaseAuth.instance;
+class FirebaseGroupService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-//   /// ✅ Create a New Group
-//   Future<void> createGroup(String groupName, List<String> members) async {
-//     try {
-//       final user = _auth.currentUser;
-//       if (user == null) throw Exception("User not logged in");
+  CollectionReference get _usersCollection => _firestore.collection('users');
+  CollectionReference get _groupsCollection => _firestore.collection('groups');
 
-//       DocumentReference groupRef = _firestore.collection('groups').doc();
+  /// ✅ Send Message (Includes Sender's Username)
+  Future<void> sendMessage(String groupId, String messageText) async {
+    if (messageText.trim().isEmpty) return;
 
-//       Group newGroup = Group(
-//         id: groupRef.id,
-//         name: groupName,
-//         createdBy: user.uid,
-//         members: {...members, user.uid}.toList(), // Ensuring uniqueness
-//         createdAt: Timestamp.now(),
-//       );
+    final user = _auth.currentUser;
+    if (user == null) return;
 
-//       await groupRef.set(newGroup.toMap());
-//       print("✅ Group created successfully!");
-//     } catch (e) {
-//       print("❌ Error creating group: $e");
-//     }
-//   }
+    try {
+      DocumentSnapshot userDoc = await _usersCollection.doc(user.uid).get();
+      if (!userDoc.exists) throw Exception("User data not found");
 
-//   /// ✅ Send a Message in a Group
-//   Future<void> sendMessage(String groupId, String messageText) async {
-//     if (messageText.trim().isEmpty) return;
+      Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>? ?? {};
+      String senderName = userData['userName'] ?? 'Unknown'; // ✅ Store sender's username
 
-//     final user = _auth.currentUser;
-//     if (user == null) return;
+      DocumentReference messageRef =
+          _groupsCollection.doc(groupId).collection('messages').doc();
 
-//     try {
-//       // 🔍 Fetch user's details (username + email)
-//       DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
-//       if (!userDoc.exists) throw Exception("User data not found");
-      
-//       Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>? ?? {};
-//       String userName = userData['userName'] ?? 'Unknown';
-//       String senderEmail = userData['email'] ?? 'No Email';
+      Message newMessage = Message(
+        id: messageRef.id,
+        senderId: user.uid,
+        senderName: senderName, // ✅ Stores sender's username
+        text: messageText.trim(),
+        timestamp: Timestamp.now(),
+      );
 
-//       DocumentReference messageRef =
-//           _firestore.collection('groups').doc(groupId).collection('messages').doc();
+      await messageRef.set(newMessage.toMap());
+    } catch (e) {
+      print("❌ Error sending message: $e");
+    }
+  }
 
-//       Message newMessage = Message(
-//         id: messageRef.id,
-//         groupId: groupId,
-//         senderId: user.uid,
-//         userName: userName,
-//         senderEmail: senderEmail,
-//         text: messageText.trim(),
-//         timestamp: Timestamp.now(),
-//       );
+  /// ✅ Fetch Messages
+  Stream<List<Message>> getGroupMessages(String groupId) {
+    return _groupsCollection
+        .doc(groupId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Message.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+            .toList());
+  }
 
-//       await messageRef.set(newMessage.toMap());
-//       print("✅ Message Sent: ${newMessage.toMap()}");
-//     } catch (e) {
-//       print("❌ Error sending message: $e");
-//     }
-//   }
+  /// ✅ Add Member to Group by Username
+  Future<bool> addMemberByUsername(String groupId, String username) async {
+    try {
+      QuerySnapshot userSnapshot = await _usersCollection
+          .where('userName', isEqualTo: username)
+          .limit(1)
+          .get();
 
-//   /// ✅ Fetch All Messages in a Group
-//   Stream<List<Message>> getGroupMessages(String groupId) {
-//     return _firestore
-//         .collection('groups')
-//         .doc(groupId)
-//         .collection('messages')
-//         .orderBy('timestamp', descending: false)
-//         .snapshots()
-//         .map((snapshot) {
-//           if (snapshot.docs.isEmpty) {
-//             print("⚠️ No messages found!");
-//             return [];
-//           }
-//           return snapshot.docs.map((doc) {
-//             try {
-//               return Message.fromMap(doc.data() as Map<String, dynamic>, doc.id);
-//             } catch (e) {
-//               print("❌ Error parsing message: $e");
-//               return null;
-//             }
-//           }).whereType<Message>().toList();
-//         });
-//   }
-// }
+      if (userSnapshot.docs.isNotEmpty) {
+        String userIdToAdd = userSnapshot.docs.first.id;
+
+        await _groupsCollection.doc(groupId).update({
+          'members': FieldValue.arrayUnion([userIdToAdd])
+        });
+
+        return true; // ✅ Member added
+      }
+      return false; // ❌ User not found
+    } catch (e) {
+      print("❌ Error adding member: $e");
+      return false;
+    }
+  }
+
+  /// ✅ Fetch Group Members
+  Future<List<Map<String, dynamic>>> getGroupMembers(String groupId) async {
+    try {
+      DocumentSnapshot groupSnapshot = await _groupsCollection.doc(groupId).get();
+      if (!groupSnapshot.exists || !groupSnapshot.data().toString().contains('members')) {
+        return []; // ❌ Group or members field not found
+      }
+
+      List members = (groupSnapshot['members'] as List?) ?? [];
+      if (members.isEmpty) return [];
+
+      List<DocumentSnapshot> userSnapshots = await Future.wait(
+        members.map((memberId) => _usersCollection.doc(memberId).get()),
+      );
+
+      return userSnapshots
+          .where((userDoc) => userDoc.exists)
+          .map((userDoc) => userDoc.data() as Map<String, dynamic>? ?? {})
+          .toList();
+    } catch (e) {
+      print("❌ Error fetching members: $e");
+      return [];
+    }
+  }
+}
