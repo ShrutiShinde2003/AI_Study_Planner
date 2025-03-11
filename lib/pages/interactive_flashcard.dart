@@ -3,8 +3,8 @@ import '../models/flashcard_model.dart';
 
 class InteractiveFlashcard extends StatefulWidget {
   final Flashcard flashcard;
-  final VoidCallback? onKnown; // Optional callback
-  final VoidCallback? onReview; // Optional callback
+  final VoidCallback? onKnown; // Optional callback when marked as known
+  final VoidCallback? onReview; // Optional callback when marked for review
 
   const InteractiveFlashcard({
     Key? key,
@@ -30,7 +30,7 @@ class _InteractiveFlashcardState extends State<InteractiveFlashcard> {
       onTap: _flipCard,
       child: Dismissible(
         key: UniqueKey(),
-        direction: DismissDirection.horizontal,
+        direction: DismissDirection.horizontal, // Swipe left-right
         onDismissed: (direction) {
           if (direction == DismissDirection.startToEnd) {
             widget.onKnown?.call();
@@ -44,8 +44,16 @@ class _InteractiveFlashcardState extends State<InteractiveFlashcard> {
             );
           }
         },
-        background: _buildSwipeBackground(Colors.green, Icons.check, Alignment.centerLeft),
-        secondaryBackground: _buildSwipeBackground(Colors.red, Icons.refresh, Alignment.centerRight),
+        background: _buildSwipeBackground(
+          color: Colors.green,
+          icon: Icons.check,
+          alignment: Alignment.centerLeft,
+        ),
+        secondaryBackground: _buildSwipeBackground(
+          color: Colors.red,
+          icon: Icons.refresh,
+          alignment: Alignment.centerRight,
+        ),
         child: Card(
           elevation: 8,
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -56,10 +64,9 @@ class _InteractiveFlashcardState extends State<InteractiveFlashcard> {
             alignment: Alignment.center,
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
-              child: _showAnswer
-                  ? Text(widget.flashcard.answer, key: const ValueKey('answer'), style: _answerStyle, textAlign: TextAlign.center)
-                  : Text(widget.flashcard.question, key: const ValueKey('question'), style: _questionStyle, textAlign: TextAlign.center),
+              transitionBuilder: (child, animation) =>
+                  ScaleTransition(scale: animation, child: child),
+              child: _buildFlashcardContent(),
             ),
           ),
         ),
@@ -67,7 +74,29 @@ class _InteractiveFlashcardState extends State<InteractiveFlashcard> {
     );
   }
 
-  Widget _buildSwipeBackground(Color color, IconData icon, Alignment alignment) {
+  /// ✅ Helper for question/answer content
+  Widget _buildFlashcardContent() {
+    return _showAnswer
+        ? Text(
+            widget.flashcard.answer,
+            key: const ValueKey('answer'),
+            style: _answerStyle,
+            textAlign: TextAlign.center,
+          )
+        : Text(
+            widget.flashcard.question,
+            key: const ValueKey('question'),
+            style: _questionStyle,
+            textAlign: TextAlign.center,
+          );
+  }
+
+  /// ✅ Helper for swipe background
+  Widget _buildSwipeBackground({
+    required Color color,
+    required IconData icon,
+    required Alignment alignment,
+  }) {
     return Container(
       color: color,
       alignment: alignment,
@@ -76,6 +105,16 @@ class _InteractiveFlashcardState extends State<InteractiveFlashcard> {
     );
   }
 
-  final _questionStyle = const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black);
-  final _answerStyle = const TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.black87);
+  /// ✅ Flashcard styling
+  final _questionStyle = const TextStyle(
+    fontSize: 22,
+    fontWeight: FontWeight.bold,
+    color: Colors.black,
+  );
+
+  final _answerStyle = const TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w500,
+    color: Colors.black87,
+  );
 }
