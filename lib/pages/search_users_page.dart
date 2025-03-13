@@ -20,20 +20,17 @@ class _SearchUsersPageState extends State<SearchUsersPage> {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
     try {
-      // 🔹 Search by username (case-insensitive)
       QuerySnapshot userNameResults = await firestore
           .collection('users')
           .where('userName', isGreaterThanOrEqualTo: query)
           .where('userName', isLessThanOrEqualTo: query + '\uf8ff')
           .get();
 
-      // 🔹 Search by email (exact match)
       QuerySnapshot emailResults = await firestore
           .collection('users')
           .where('email', isEqualTo: query)
           .get();
 
-      // 🔹 Merge results (avoid duplicates)
       Set<String> seenUserIds = {};
       List<DocumentSnapshot> allResults = [];
 
@@ -52,25 +49,73 @@ class _SearchUsersPageState extends State<SearchUsersPage> {
     }
   }
 
-  void addFriend(String friendId) async {
+  void followUser(String targetUserId) async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
-
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-    try {
-      await firestore.collection('users').doc(userId).update({
-        'following': FieldValue.arrayUnion([friendId])
-      });
+    DocumentReference userRef = firestore.collection('users').doc(userId);
+    DocumentReference targetUserRef = firestore.collection('users').doc(targetUserId);
 
-      await firestore.collection('users').doc(friendId).update({
-        'followers': FieldValue.arrayUnion([userId])
+    try {
+      await firestore.runTransaction((transaction) async {
+        DocumentSnapshot userSnapshot = await transaction.get(userRef);
+        DocumentSnapshot targetUserSnapshot = await transaction.get(targetUserRef);
+
+        if (!userSnapshot.exists || !targetUserSnapshot.exists) {
+          throw Exception("User does not exist");
+        }
+
+        transaction.update(userRef, {
+          'following': FieldValue.arrayUnion([targetUserId])
+        });
+
+        transaction.update(targetUserRef, {
+          'followers': FieldValue.arrayUnion([userId])
+        });
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Friend Added!")),
+        SnackBar(content: Text("Followed user")),
       );
+
+      setState(() {}); // Refresh UI
     } catch (e) {
-      print("❌ Error adding friend: $e");
+      print("❌ Error following user: $e");
+    }
+  }
+
+  void unfollowUser(String targetUserId) async {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    DocumentReference userRef = firestore.collection('users').doc(userId);
+    DocumentReference targetUserRef = firestore.collection('users').doc(targetUserId);
+
+    try {
+      await firestore.runTransaction((transaction) async {
+        DocumentSnapshot userSnapshot = await transaction.get(userRef);
+        DocumentSnapshot targetUserSnapshot = await transaction.get(targetUserRef);
+
+        if (!userSnapshot.exists || !targetUserSnapshot.exists) {
+          throw Exception("User does not exist");
+        }
+
+        transaction.update(userRef, {
+          'following': FieldValue.arrayRemove([targetUserId])
+        });
+
+        transaction.update(targetUserRef, {
+          'followers': FieldValue.arrayRemove([userId])
+        });
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Unfollowed user")),
+      );
+
+      setState(() {}); // Refresh UI
+    } catch (e) {
+      print("❌ Error unfollowing user: $e");
     }
   }
 
@@ -97,9 +142,32 @@ class _SearchUsersPageState extends State<SearchUsersPage> {
                 return ListTile(
                   title: Text(user['userName']),
                   subtitle: Text(user['email']),
-                  trailing: ElevatedButton(
-                    onPressed: () => addFriend(user.id),
-                    child: Text("Add"),
+                  trailing: StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(FirebaseAuth.instance.currentUser!.uid)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData || snapshot.data == null) {
+                        return SizedBox();
+                      }
+
+                      var currentUserData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+                      List<dynamic> followingList = currentUserData['following'] ?? [];
+
+                      bool isFollowing = followingList.contains(user.id);
+
+                      return ElevatedButton(
+                        onPressed: () {
+                          if (isFollowing) {
+                            unfollowUser(user.id);
+                          } else {
+                            followUser(user.id);
+                          }
+                        },
+                        child: Text(isFollowing ? "Unfollow" : "Follow"),
+                      );
+                    },
                   ),
                 );
               }).toList(),

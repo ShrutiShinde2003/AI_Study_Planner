@@ -1,15 +1,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:study_planner/components/my_button.dart';
 import 'package:study_planner/models/user_model.dart';
 import 'package:study_planner/pages/bottom_navigation.dart';
 import 'package:study_planner/pages/dashboard.dart';
 import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
-import 'package:study_planner/pages/login_page.dart';
 import 'package:study_planner/pages/profile_page.dart';
-import 'package:study_planner/pages/todo_list.dart'; // Import your Login Page here
+import 'package:study_planner/pages/todo_list.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -19,13 +22,12 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // Text editing controllers
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
   final userNameController = TextEditingController();
-
-  // Firestore reference
+  File? _image;
+  final ImagePicker _picker = ImagePicker();
   CollectionReference ref = FirebaseFirestore.instance.collection('users');
 
   @override
@@ -37,303 +39,170 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  // Password confirmation logic
   bool passwordConfirmed() {
-    return passwordController.text.trim() ==
-        confirmPasswordController.text.trim();
+    return passwordController.text.trim() == confirmPasswordController.text.trim();
   }
 
-  // Navigate to Login Page
-  void goToLoginPage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const LoginPage(), // Ensure LoginPage exists
-      ),
-    );
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String> _saveImageLocally(String uid) async {
+    if (_image == null) return "";
+    final directory = await getApplicationDocumentsDirectory();
+    final imagePath = "${directory.path}/profile_$uid.jpg";
+    final File localImage = await _image!.copy(imagePath);
+    return localImage.path;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.indigo.shade200, // background color
+      backgroundColor: Colors.indigo.shade200,
       body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 50),
-              // Let's create an account for you
-              Text(
-                'Let\'s create an account for you',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Username textfield
-              SizedBox(
-                width: 370,
-                child: TextField(
-                  controller: userNameController,
-                  obscureText: false,
-                  decoration: InputDecoration(
-                    hintText: 'User Name',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: BorderSide.none, // Default border
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: const BorderSide(
-                        color: Colors.white, // Border color for enabled state
-                        width: 1, // Border width
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: const BorderSide(
-                        color: Colors.indigo, // Border color for focused state
-                        width: 1, // Border width
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                      horizontal: 15,
-                    ), // Padding inside the text field
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Email textfield
-              SizedBox(
-                width: 370,
-                child: TextField(
-                  controller: emailController,
-                  obscureText: false,
-                  decoration: InputDecoration(
-                    hintText: 'Email',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: BorderSide.none, // Default border
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: const BorderSide(
-                        color: Colors.white, // Border color for enabled state
-                        width: 1, // Border width
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: const BorderSide(
-                        color: Colors.indigo, // Border color for focused state
-                        width: 1, // Border width
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                      horizontal: 15,
-                    ), // Padding inside the text field
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Password textfield
-              SizedBox(
-                width: 370,
-                child: TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    hintText: 'Password',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: BorderSide.none, // Default border
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: const BorderSide(
-                        color: Colors.white, // Border color for enabled state
-                        width: 1, // Border width
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: const BorderSide(
-                        color: Colors.indigo, // Border color for focused state
-                        width: 1, // Border width
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                      horizontal: 15,
-                    ), // Padding inside the text field
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              /// Confirm Password textfield
-              SizedBox(
-                width: 370,
-                child: TextField(
-                  controller: confirmPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    hintText: 'Confirm Password',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: BorderSide.none, // Default border
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: const BorderSide(
-                        color: Colors.white, // Border color for enabled state
-                        width: 1, // Border width
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: const BorderSide(
-                        color: Colors.indigo, // Border color for focused state
-                        width: 1, // Border width
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                      horizontal: 15,
-                    ), // Padding inside the text field
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              // Sign up button
-              MyButton(
-                text: 'Sign Up',
-                onTap: () async {
-                  if (passwordConfirmed()) {
-                    try {
-                      final credential = await FirebaseAuth.instance
-                          .createUserWithEmailAndPassword(
-                        email: emailController.text.trim(),
-                        password: passwordController.text.trim(),
-                      );
-
-                      // Get the UID of the newly created user
-                      final user = credential.user!;
-                      var uid = user.uid;
-
-                      // Create a UserModel instance
-                      UserModel userModel = UserModel(
-                        uid: uid,
-                        userName: userNameController.text.trim(),
-                        email: emailController.text.trim(),
-                        subjects: [], // Initialize subjects
-                        followers: [], // Initialize empty followers list
-                        following: [], // Initialize empty following list
-                        profileImage:  "", // ✅ Initialize profileImage as an empty string (or use a default image path)
-                      );
-
-                      // Add the user data to Firestore using the UID as the document ID
-                      await ref.doc(uid).set(userModel.toMap());
-
-                      // Feedback to the user and debug console
-                      const successMessage = 'User added successfully';
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text(successMessage)),
-                      );
-                      print(successMessage);
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BottomNavigation(
-                            homePage: HomePage(),
-                            todoPage: ToDoListPage(), // ✅ FIXED
-                            dashboardPage: DashboardPage(),
-                            profilePage: ProfilePage(
-                              userId: '',
-                            ),
-                            GeminiPage: ChatScreen(),
-                          ), // Ensure LoginPage exists
-                        ),
-                      );
-                    } on FirebaseAuthException catch (e) {
-                      String errorMessage;
-                      if (e.code == 'weak-password') {
-                        errorMessage = 'The password provided is too weak.';
-                      } else if (e.code == 'email-already-in-use') {
-                        errorMessage =
-                            'The account already exists for that email.';
-                      } else {
-                        errorMessage = 'Registration failed. Please try again.';
-                      }
-                      // Feedback to the user and debug console
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(errorMessage)),
-                      );
-                      print(errorMessage);
-                    } catch (e) {
-                      const errorMessage =
-                          'Error during registration. Please try again.';
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text(errorMessage)),
-                      );
-                      print("Error during registration: $e");
-                    }
-                  } else {
-                    const errorMessage = 'Password confirmation failed.';
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text(errorMessage)),
-                    );
-                    print(errorMessage);
-                  }
-                },
-              ),
-
-              const SizedBox(height: 50),
-
-              // Already a member? Login here
-              Row(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 30),
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Already a member?',
-                    style: TextStyle(color: Colors.indigo),
-                  ),
-                  const SizedBox(width: 4),
+                  const SizedBox(height: 20),
+
+                  // Profile Image Selection
                   GestureDetector(
-                    onTap: goToLoginPage,
-                    child: const Text(
-                      'Login now',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    onTap: _pickImage,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 55,
+                          backgroundColor: Colors.grey.shade300,
+                          backgroundImage: _image != null ? FileImage(_image!) : null,
+                          child: _image == null
+                              ? const Icon(Icons.camera_alt, size: 40, color: Colors.white)
+                              : null,
+                        ),
+                        if (_image != null)
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.indigo.shade200,
+                              ),
+                              padding: const EdgeInsets.all(6),
+                              child: const Icon(Icons.edit, size: 20, color: Colors.white),
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Text(
+                    'Let\'s create an account for you',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // User Name Field
+                  _buildTextField(userNameController, "User Name"),
+                  const SizedBox(height: 10),
+
+                  // Email Field
+                  _buildTextField(emailController, "Email"),
+                  const SizedBox(height: 10),
+
+                  // Password Field
+                  _buildTextField(passwordController, "Password", isObscure: true),
+                  const SizedBox(height: 10),
+
+                  // Confirm Password Field
+                  _buildTextField(confirmPasswordController, "Confirm Password", isObscure: true),
+                  const SizedBox(height: 25),
+
+                  // Sign Up Button
+                  MyButton(
+                    text: 'Sign Up',
+                    onTap: () async {
+                      if (passwordConfirmed()) {
+                        try {
+                          final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                            email: emailController.text.trim(),
+                            password: passwordController.text.trim(),
+                          );
+                          final user = credential.user!;
+                          var uid = user.uid;
+                          String imagePath = await _saveImageLocally(uid);
+                          UserModel userModel = UserModel(
+                            uid: uid,
+                            userName: userNameController.text.trim(),
+                            email: emailController.text.trim(),
+                            subjects: [],
+                            followers: [],
+                            following: [],
+                            profileImage: imagePath,
+                          );
+                          await ref.doc(uid).set(userModel.toMap());
+                          SharedPreferences prefs = await SharedPreferences.getInstance();
+                          await prefs.setString("profileImage_$uid", imagePath);
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(const SnackBar(content: Text('User added successfully')));
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BottomNavigation(
+                                homePage: HomePage(),
+                                todoPage: ToDoListPage(),
+                                dashboardPage: DashboardPage(),
+                                profilePage: ProfilePage(userId: uid),
+                                GeminiPage: ChatScreen(),
+                              ),
+                            ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(const SnackBar(content: Text('Error during registration. Please try again.')));
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(content: Text('Passwords do not match!')));
+                      }
+                    },
                   ),
                 ],
               ),
-            ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Text Field Widget
+  Widget _buildTextField(TextEditingController controller, String hint, {bool isObscure = false}) {
+    return SizedBox(
+      width: 370,
+      child: TextField(
+        controller: controller,
+        obscureText: isObscure,
+        decoration: InputDecoration(
+          hintText: hint,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
           ),
         ),
       ),

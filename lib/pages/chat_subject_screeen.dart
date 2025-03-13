@@ -30,7 +30,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
     _geminiApiService = GeminiApiService();
   }
 
-  /// ✅ Send text message and AI reply
+  ///  Send text message and AI reply
   Future<void> sendMessage(String message) async {
     if (message.isEmpty) return;
     String userId = _auth.currentUser!.uid;
@@ -48,7 +48,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
     setState(() => _isLoading = false);
   }
 
-  /// ✅ File picker & command ask
+  ///  File picker & command ask
   Future<void> uploadFileAndCommand() async {
     final picker = ImagePicker();
 
@@ -79,7 +79,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
     );
   }
 
-  /// ✅ Command input dialog
+  /// Command input dialog
   Future<void> _askCommand(File file, {required bool isImage}) async {
     final TextEditingController _promptController = TextEditingController();
 
@@ -106,7 +106,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
     );
   }
 
-  /// ✅ Process file with AI & handle response based on command
+  ///  Process file with AI & handle response based on command
   Future<void> _processFile(File file, String command, bool isImage) async {
     String userId = _auth.currentUser!.uid;
     setState(() => _isLoading = true);
@@ -144,7 +144,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
     }
   }
 
-  /// ✅ Save chat message to Firestore
+  ///  Save chat message to Firestore
   Future<void> _saveMessage(String userId, String text, String sender) async {
     await _firestore.collection('chats').doc(userId).collection(widget.subject).add({
       "sender": sender,
@@ -153,12 +153,12 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
     });
   }
 
-  /// ✅ Show snack bar
+  ///  Show snack bar
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  /// ✅ Main build
+  ///  Main build
   @override
   Widget build(BuildContext context) {
     String userId = _auth.currentUser!.uid;

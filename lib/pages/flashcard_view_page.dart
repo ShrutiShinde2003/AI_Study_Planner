@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/flashcard_model.dart';
-import '../pages/interactive_flashcard.dart'; // ✅ Importing from widgets folder
+import '../pages/interactive_flashcard.dart'; // Importing from widgets folder
 
 class FlashcardViewPage extends StatelessWidget {
   final List<Flashcard> flashcards;
@@ -18,7 +18,7 @@ class FlashcardViewPage extends StatelessWidget {
               itemCount: flashcards.length,
               itemBuilder: (context, index) {
                 return InteractiveFlashcard(
-                  flashcard: flashcards[index], // ✅ Flip card only, no swipe/move
+                  flashcard: flashcards[index], // Flip card only, no swipe/move
                 );
               },
             ),

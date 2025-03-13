@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/task_card.dart';
 import 'notes_page.dart';
 import 'package:intl/intl.dart';
+import '../services/gamification_service.dart'; // ✅ Import Gamification Service
 
 class ToDoListPage extends StatefulWidget {
   ToDoListPage();
@@ -15,6 +16,8 @@ class ToDoListPage extends StatefulWidget {
 class _ToDoListPageState extends State<ToDoListPage> with SingleTickerProviderStateMixin {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GamificationService _gamificationService = GamificationService(); // ✅ Initialize service
+
   List<String> _subjects = [];
   late TabController _tabController;
   bool isLoading = true;
@@ -144,13 +147,19 @@ class _ToDoListPageState extends State<ToDoListPage> with SingleTickerProviderSt
     );
   }
 
-  /// 🔥 Toggle task completion (Mark complete/uncomplete)
+  /// 🔥 Toggle task completion (Mark complete/uncomplete + XP & Rewards)
   Future<void> _toggleTaskCompletion(String taskId, bool isCurrentlyCompleted) async {
     try {
       await _firestore.collection('tasks').doc(taskId).update({
         'isCompleted': !isCurrentlyCompleted,
         'completedAt': !isCurrentlyCompleted ? FieldValue.serverTimestamp() : null,
       });
+
+      // ✅ Update XP & progress only when marking as completed
+      if (!isCurrentlyCompleted) {
+        await _gamificationService.updateUserProgress();
+      }
+
       print("✅ Task completion toggled: ${!isCurrentlyCompleted}");
     } catch (e) {
       print("❌ Error toggling task completion: $e");

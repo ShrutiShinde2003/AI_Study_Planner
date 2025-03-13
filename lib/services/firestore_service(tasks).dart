@@ -9,16 +9,17 @@ class FirestoreService {
   CollectionReference get _taskCollection => _db.collection('tasks');
 
   // 🔹 Get Tasks Stream for Current User (Sorted by Due Date)
-  Stream<List<TodoItem>> getTodoList() {
+  Stream<List<Task>> getTodoList() {
     final user = _auth.currentUser;
     if (user != null) {
       return _taskCollection
           .where('uid', isEqualTo: user.uid)
-          .orderBy('dueDate', descending: false) // ✅ Ensures sorted tasks
+          .orderBy('dueDate', descending: false)
           .snapshots()
           .map((snapshot) {
         return snapshot.docs
-            .map((doc) => TodoItem.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+            .map((doc) =>
+                Task.fromFirestore(doc)) // ✅ Uses Task instead of TodoItem
             .toList();
       });
     } else {
@@ -27,37 +28,33 @@ class FirestoreService {
   }
 
   // 🔹 Add Task (Stores `dueDate` as Firestore `Timestamp`)
-  Future<void> addTask(String subject, String taskName, String description, DateTime dueDate) async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      try {
-        await _taskCollection.add({
-          'uid': user.uid,                // ✅ Store User ID
-          'subject': subject,             // ✅ Subject
-          'taskName': taskName,           // ✅ Task Name
-          'description': description,     // ✅ Task Description
-          'dueDate': Timestamp.fromDate(dueDate), // ✅ Store as Firestore Timestamp
-          'isCompleted': false,           // ✅ Default: Task is Pending
-          'createdAt': FieldValue.serverTimestamp(), // ✅ Auto-generated Timestamp
-        });
+  Future<void> addTask({
+    required String subject, // ✅ Changed from subjectName to subject
+    required String taskName,
+    required String description,
+    required DateTime dueDate,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-        print("✅ Task added successfully!");
-      } catch (e) {
-        print("❌ Error adding task: $e");
-        rethrow;
-      }
-    } else {
-      throw Exception("User is not authenticated");
-    }
+    await FirebaseFirestore.instance.collection('tasks').add({
+      'uid': user.uid,
+      'subject': subject, // ✅ Ensure Firestore stores "subject"
+      'taskName': taskName,
+      'description': description,
+      'dueDate': dueDate,
+      'isCompleted': false,
+    });
   }
 
-  // 🔹 Update Task (Ensure Only the Owner Can Update & prevent uid changes)
-  Future<void> updateTask(String taskId, Map<String, dynamic> updatedData) async {
+  // 🔹 Update Task (Ensure Only the Owner Can Update)
+  Future<void> updateTask(
+      String taskId, Map<String, dynamic> updatedData) async {
     final user = _auth.currentUser;
     if (user != null) {
       try {
         DocumentSnapshot taskSnapshot = await _taskCollection.doc(taskId).get();
-        
+
         if (!taskSnapshot.exists || taskSnapshot['uid'] != user.uid) {
           throw Exception("Unauthorized: You can only update your own tasks.");
         }

@@ -42,24 +42,25 @@ class _NotesPageState extends State<NotesPage> {
   }
 
   void _addTask() async {
-    if (_taskNameController.text.isEmpty ||
-        _selectedDueDate == null ||
-        _selectedSubject == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please fill in all fields")),
-      );
-      return;
-    }
-
-    await _firestoreService.addTask(
-      _selectedSubject!,
-      _taskNameController.text,
-      _descriptionController.text,
-      _selectedDueDate!,
+  if (_taskNameController.text.isEmpty ||
+      _selectedDueDate == null ||
+      _selectedSubject == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Please fill in all fields")),
     );
-
-    Navigator.pop(context);
+    return;
   }
+
+  await _firestoreService.addTask(
+    subject: _selectedSubject!, // ✅ Changed parameter to subject
+    taskName: _taskNameController.text,
+    description: _descriptionController.text,
+    dueDate: _selectedDueDate!,
+  );
+
+  Navigator.pop(context);
+}
+
 
   @override
   Widget build(BuildContext context) {
