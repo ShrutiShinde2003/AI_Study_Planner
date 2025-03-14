@@ -53,13 +53,12 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200], // Light background for contrast
+      backgroundColor: Colors.white, // Light background for contrast
       appBar: AppBar(
         title: Text("Profile"),
-        backgroundColor: Colors.blueAccent,
         actions: [
           IconButton(
-            icon: Icon(Icons.settings, color: Colors.white),
+            icon: Icon(Icons.settings, color: Colors.black),
             onPressed: () {
               Navigator.push(
                 context,
