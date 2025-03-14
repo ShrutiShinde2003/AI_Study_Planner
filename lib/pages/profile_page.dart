@@ -25,7 +25,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final GamificationService _gamificationService = GamificationService();
 
   UserModel? user;
-
+         
   @override
   void initState() {
     super.initState();
