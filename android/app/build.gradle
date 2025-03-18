@@ -2,12 +2,13 @@ plugins {
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
+    id "org.jetbrains.kotlin.android" version "1.9.20" apply false // added this line 
     id "com.google.gms.google-services"
 }
 
 android {
     namespace = "com.example.ai_study_planner"
-    compileSdk = 34 // Specify the compile SDK version
+    compileSdk = 35 // Specify the compile SDK version
     ndkVersion = "28.0.13004108"  // Use your Flutter NDK version
 
     compileOptions {
@@ -38,7 +39,7 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.20"
     
     // Firebase BoM
     implementation platform('com.google.firebase:firebase-bom:33.5.1')
