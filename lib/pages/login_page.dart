@@ -48,7 +48,7 @@ class _LoginPageState extends State<LoginPage> {
           builder: (context) => BottomNavigation(
             homePage: HomePage(),
             dashboardPage: DashboardPage(), // ✅ Added missing parameter
-            todoPage: ToDoListPage(subjects: []),
+            todoPage: ToDoListPage(),
             profilePage: ProfilePage(userId: ''),
             GeminiPage: ChatScreen(),
           ),

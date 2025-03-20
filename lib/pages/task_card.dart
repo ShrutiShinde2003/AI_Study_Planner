@@ -4,65 +4,73 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class TaskCard extends StatelessWidget {
   final String taskId;
   final Map<String, dynamic> taskData;
+  final VoidCallback? onCompleteTask;
 
-  TaskCard({required this.taskId, required this.taskData});
+  TaskCard({
+    required this.taskId,
+    required this.taskData,
+    this.onCompleteTask,
+  });
 
-  void _toggleTaskCompletion(String taskId, bool currentStatus) {
-    if (taskId.isEmpty) {
-      print("❌ Error: Task ID is empty!");
-      return;
-    }
+  /// 🔄 Toggle task completion status
+  Future<void> _toggleTaskCompletion(String taskId, bool currentStatus) async {
+    try {
+      await FirebaseFirestore.instance.collection('tasks').doc(taskId).update({
+        'isCompleted': !currentStatus,
+        'completedAt': !currentStatus ? FieldValue.serverTimestamp() : null,
+      });
 
-    FirebaseFirestore.instance.collection('tasks').doc(taskId).update({
-      'isCompleted': !currentStatus, // Toggle status
-    }).then((_) {
-      print("✅ Task status updated!");
-    }).catchError((error) {
+      if (onCompleteTask != null) onCompleteTask!();
+    } catch (error) {
       print("❌ Error updating task: $error");
-    });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    bool isCompleted = taskData['isCompleted'] ?? false;
-
-    // ✅ Ensure Subject Name is Fetched Correctly
-    String subjectName = taskData.containsKey('subject') ? taskData['subject'] ?? 'No Subject' : 'No Subject';
-
-    // ✅ Convert Firestore Timestamp to Formatted Date
-    String dueDate = 'No Date';
-    if (taskData.containsKey('dueDate')) {
-      if (taskData['dueDate'] is Timestamp) {
-        dueDate = (taskData['dueDate'] as Timestamp).toDate().toLocal().toString();
-      } else if (taskData['dueDate'] is String) {
-        dueDate = taskData['dueDate'];
-      }
-    }
+    bool isCompleted = taskData["isCompleted"] ?? false;
+    String taskName = taskData['taskName'] ?? "No Task Name";
+    String dueDate = taskData['dueDate'] ?? 'No Due Date';
+    String subject = taskData['subject'] ?? 'No Subject'; // ✅ Changed from subjectName to subject
 
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: ListTile(
         contentPadding: EdgeInsets.all(10),
+        leading: GestureDetector(
+          onTap: () => _toggleTaskCompletion(taskId, isCompleted),
+          child: Icon(
+            isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+            color: isCompleted ? Colors.green : Colors.grey,
+            size: 28,
+          ),
+        ),
         title: Text(
-          taskData['taskName'] ?? "No Task Name",
+          taskName,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            decoration: isCompleted ? TextDecoration.lineThrough : null, // Strike-through if completed
+            decoration: isCompleted ? TextDecoration.lineThrough : null,
+            fontSize: 16,
           ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Subject: $subjectName"), // ✅ Fixed Subject Display
-            Text("Due: $dueDate"), // ✅ Properly Displays Date
+            Text(
+              "Subject: $subject", // ✅ Now correctly retrieves "subject"
+              style: TextStyle(
+                color: Colors.blueAccent,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              "Due: $dueDate",
+              style: TextStyle(
+                color: Colors.grey[600],
+              ),
+            ),
           ],
-        ),
-        trailing: Checkbox(
-          value: isCompleted,
-          onChanged: (value) {
-            _toggleTaskCompletion(taskId, isCompleted);
-          },
         ),
       ),
     );

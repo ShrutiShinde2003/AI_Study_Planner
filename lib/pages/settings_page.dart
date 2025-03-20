@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_page.dart';
 import 'edit_profile_page.dart';
+import 'subjects_page.dart';
 
 class SettingsPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -74,6 +75,16 @@ class SettingsPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => EditProfilePage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.book),
+              title: Text("Manage Subjects"),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SubjectsPage()),
                 );
               },
             ),
