@@ -71,7 +71,7 @@ class FollowersPage extends StatelessWidget {
 
             return ListTile(
               leading: FutureBuilder<String?>(
-                future: firebaseService.getFollowerProfileImage(followerUserId, followerData['profileImage']), // ✅ FIXED
+                future: firebaseService.getFollowerProfileImage(followerUserId, followerData['profileImage']), // FIXED
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return CircleAvatar(

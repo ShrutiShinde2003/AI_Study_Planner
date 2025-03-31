@@ -7,7 +7,7 @@ class GamificationService {
 
   CollectionReference get _users => _db.collection('users');
 
-  /// ✅ Update XP, Streaks, Task Progress, Level, and Rewards
+  /// Update XP, Streaks, Task Progress, Level, and Rewards
   Future<void> updateUserProgress() async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -50,7 +50,7 @@ class GamificationService {
           }
         }
 
-        // ✅ Update Firestore
+        // Update Firestore
         await userRef.update({
           'xp': xp,
           'streak': streak,
@@ -101,7 +101,7 @@ class GamificationService {
     }
   }
 
-  /// ✅ **Fix XP Deduction When Tasks Are Deleted**
+  /// **Fix XP Deduction When Tasks Are Deleted**
   Future<void> deductXPOnTaskDelete() async {
     final user = _auth.currentUser;
     if (user == null) return;

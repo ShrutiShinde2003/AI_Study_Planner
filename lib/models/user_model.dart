@@ -8,13 +8,13 @@ class UserModel {
   List<String> followers;
   List<String> following;
   String profileImage;
-  int xp; // ✅ XP for gamification
-  int taskProgress; // ✅ Tracks completed tasks before reward
-  int level; // ✅ User level
-  int rewards; // ✅ Rewards earned
-  int streak; // 🔥 NEW: Daily streak tracking
-  DateTime lastTaskDate; // 📅 NEW: Last task completed date
-  List<String> badges; // 🏅 List of earned badges
+  int xp; // XP for gamification
+  int taskProgress; // Tracks completed tasks before reward
+  int level; // User level
+  int rewards; // Rewards earned
+  int streak; // NEW: Daily streak tracking
+  DateTime lastTaskDate; // NEW: Last task completed date
+  List<String> badges; // List of earned badges
 
   UserModel({
     required this.uid,
@@ -28,8 +28,8 @@ class UserModel {
     this.taskProgress = 0,
     this.level = 1,
     this.rewards = 0,
-    this.streak = 0, // 🔥 Default streak is 0
-    DateTime? lastTaskDate, // 📅 Default to null
+    this.streak = 0, // Default streak is 0
+    DateTime? lastTaskDate, // Default to null
     this.badges = const [],
   }) : lastTaskDate = lastTaskDate ?? DateTime.now();
 
@@ -47,13 +47,13 @@ class UserModel {
       'taskProgress': taskProgress,
       'level': level,
       'rewards': rewards,
-      'streak': streak, // ✅ Save streak
-      'lastTaskDate': Timestamp.fromDate(lastTaskDate), // ✅ Save last task date
+      'streak': streak, // Save streak
+      'lastTaskDate': Timestamp.fromDate(lastTaskDate), // Save last task date
       'badges': badges,
     };
   }
 
-  /// 📝 Convert Firestore Document to UserModel
+  /// Convert Firestore Document to UserModel
   factory UserModel.fromDocumentSnapshot(DocumentSnapshot snapshot) {
     final data = snapshot.data() as Map<String, dynamic>;
     return UserModel(
@@ -68,8 +68,8 @@ class UserModel {
       taskProgress: data['taskProgress'] ?? 0,
       level: data['level'] ?? 1,
       rewards: data['rewards'] ?? 0,
-      streak: data['streak'] ?? 0, // 🔥 Load streak from Firestore
-      lastTaskDate: (data['lastTaskDate'] as Timestamp?)?.toDate() ?? DateTime.now(), // 📅 Load last task date
+      streak: data['streak'] ?? 0, // Load streak from Firestore
+      lastTaskDate: (data['lastTaskDate'] as Timestamp?)?.toDate() ?? DateTime.now(), // Load last task date
       badges: List<String>.from(data['badges'] ?? []),
     );
   }

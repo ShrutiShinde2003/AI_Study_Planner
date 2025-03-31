@@ -35,12 +35,12 @@ class _InteractiveFlashcardState extends State<InteractiveFlashcard> {
           if (direction == DismissDirection.startToEnd) {
             widget.onKnown?.call();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("✅ Marked as known!")),
+              const SnackBar(content: Text("Marked as known!")),
             );
           } else {
             widget.onReview?.call();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("🔄 Marked as need to review!")),
+              const SnackBar(content: Text("Marked as need to review!")),
             );
           }
         },
@@ -74,7 +74,7 @@ class _InteractiveFlashcardState extends State<InteractiveFlashcard> {
     );
   }
 
-  /// ✅ Helper for question/answer content
+  /// Helper for question/answer content
   Widget _buildFlashcardContent() {
     return _showAnswer
         ? Text(
@@ -91,7 +91,7 @@ class _InteractiveFlashcardState extends State<InteractiveFlashcard> {
           );
   }
 
-  /// ✅ Helper for swipe background
+  /// Helper for swipe background
   Widget _buildSwipeBackground({
     required Color color,
     required IconData icon,
@@ -105,7 +105,7 @@ class _InteractiveFlashcardState extends State<InteractiveFlashcard> {
     );
   }
 
-  /// ✅ Flashcard styling
+  /// Flashcard styling
   final _questionStyle = const TextStyle(
     fontSize: 22,
     fontWeight: FontWeight.bold,

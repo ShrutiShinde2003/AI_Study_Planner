@@ -63,7 +63,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
       widget.homePage,
       ToDoListPage(),
       widget.dashboardPage,
-      ChatPage(), // ✅ Add Chat Page
+      ChatPage(), // Add Chat Page
       widget.GeminiPage,
       widget.profilePage,
     ];

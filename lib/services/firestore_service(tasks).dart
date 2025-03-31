@@ -8,7 +8,7 @@ class FirestoreService {
 
   CollectionReference get _taskCollection => _db.collection('tasks');
 
-  // 🔹 Get Tasks Stream for Current User (Sorted by Due Date)
+  // Get Tasks Stream for Current User (Sorted by Due Date)
   Stream<List<Task>> getTodoList() {
     final user = _auth.currentUser;
     if (user != null) {
@@ -27,9 +27,9 @@ class FirestoreService {
     }
   }
 
-  // 🔹 Add Task (Stores `dueDate` as Firestore `Timestamp`)
+  // Add Task (Stores `dueDate` as Firestore `Timestamp`)
   Future<void> addTask({
-    required String subject, // ✅ Changed from subjectName to subject
+    required String subject, // Changed from subjectName to subject
     required String taskName,
     required String description,
     required DateTime dueDate,
@@ -39,7 +39,7 @@ class FirestoreService {
 
     await FirebaseFirestore.instance.collection('tasks').add({
       'uid': user.uid,
-      'subject': subject, // ✅ Ensure Firestore stores "subject"
+      'subject': subject, // Ensure Firestore stores "subject"
       'taskName': taskName,
       'description': description,
       'dueDate': dueDate,

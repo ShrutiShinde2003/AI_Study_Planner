@@ -83,7 +83,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 SizedBox(height: 20),
                 _buildAddFriendsButton(),
                 SizedBox(height: 30),
-                _buildGamificationProgress(), // ✅ Progress Circles in a Row
+                _buildGamificationProgress(), // Progress Circles in a Row
               ],
             ),
           ),

@@ -18,16 +18,16 @@ class _GroupChatPageState extends State<GroupChatPage> {
   final FirebaseGroupService _groupService = FirebaseGroupService();
   final TextEditingController _messageController = TextEditingController();
 
-  /// ✅ Send Message
+  /// Send Message
   void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
     await _groupService.sendMessage(widget.groupId, _messageController.text.trim());
     _messageController.clear();
-    FocusScope.of(context).unfocus(); // ✅ Dismiss keyboard after sending
+    FocusScope.of(context).unfocus(); // Dismiss keyboard after sending
   }
 
-  /// ✅ Add Member to Group
+  /// Add Member to Group
   void _addMemberByUsername() {
     final TextEditingController _usernameController = TextEditingController();
 
@@ -44,12 +44,12 @@ class _GroupChatPageState extends State<GroupChatPage> {
           TextButton(
             onPressed: () async {
               String username = _usernameController.text.trim();
-              Navigator.pop(context); // ✅ Close dialog before making async call
+              Navigator.pop(context); // Close dialog before making async call
 
               bool success = await _groupService.addMemberByUsername(widget.groupId, username);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(success ? '✅ User added!' : '❌ User not found!'),
+                  content: Text(success ? 'User added!' : '❌ User not found!'),
                   backgroundColor: success ? Colors.green : Colors.red,
                 ),
               );
@@ -61,7 +61,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
     );
   }
 
-  /// ✅ Show Group Members
+  /// Show Group Members
   void _showGroupMembers() async {
     List<Map<String, dynamic>> members = await _groupService.getGroupMembers(widget.groupId);
 
@@ -98,7 +98,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       ),
       body: Column(
         children: [
-          /// ✅ Chat Messages
+          /// Chat Messages
           Expanded(
             child: StreamBuilder<List<Message>>(
               stream: _groupService.getGroupMessages(widget.groupId),
@@ -134,7 +134,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
                           crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                           children: [
                             Text(
-                              message.senderName, // ✅ Shows sender's username above message
+                              message.senderName, // Shows sender's username above message
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54),
                             ),
                             const SizedBox(height: 3),
@@ -149,7 +149,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
             ),
           ),
 
-          /// ✅ Message Input
+          /// Message Input
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
