@@ -64,16 +64,16 @@ class _HomePageState extends State<HomePage> {
             .get();
         if (taskSnapshot.docs.isEmpty) {
           updatedCompletedTasks = 0;
-          updatedXP = 0; // ✅ Reset XP too
+          updatedXP = 0; // Reset XP too
           await _firestore.collection('users').doc(userId).update({
             'completedTasksCount': 0,
-            'xp': 0, // ✅ Reset XP to 0
+            'xp': 0, // Reset XP to 0
           });
         }
 
         setState(() {
           completedTasks = updatedCompletedTasks;
-          xp = updatedXP; // ✅ Update state with new XP value
+          xp = updatedXP; // Update state with new XP value
           milestoneLevel = completedTasks ~/ 5;
           currentBadge = badges[(completedTasks ~/ 15) % badges.length];
         });
@@ -100,7 +100,7 @@ class _HomePageState extends State<HomePage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          // ✅ Fix overflow issue
+          // Fix overflow issue
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -222,12 +222,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// ✅ Completed Tasks Counter
+  /// Completed Tasks Counter
   Widget _buildCompletedTasks() {
     return Center(
       child: Column(
         children: [
-          Text("✅ Completed Tasks",
+          Text("Completed Tasks",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 10),
           Text(

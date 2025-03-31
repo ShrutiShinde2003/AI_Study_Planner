@@ -9,7 +9,7 @@ class FirebaseGroupService {
   CollectionReference get _usersCollection => _firestore.collection('users');
   CollectionReference get _groupsCollection => _firestore.collection('groups');
 
-  /// ✅ Send Message (Includes Sender's Username)
+  /// Send Message (Includes Sender's Username)
   Future<void> sendMessage(String groupId, String messageText) async {
     if (messageText.trim().isEmpty) return;
 
@@ -21,7 +21,7 @@ class FirebaseGroupService {
       if (!userDoc.exists) throw Exception("User data not found");
 
       Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>? ?? {};
-      String senderName = userData['userName'] ?? 'Unknown'; // ✅ Store sender's username
+      String senderName = userData['userName'] ?? 'Unknown'; // Store sender's username
 
       DocumentReference messageRef =
           _groupsCollection.doc(groupId).collection('messages').doc();
@@ -29,7 +29,7 @@ class FirebaseGroupService {
       Message newMessage = Message(
         id: messageRef.id,
         senderId: user.uid,
-        senderName: senderName, // ✅ Stores sender's username
+        senderName: senderName, // Stores sender's username
         text: messageText.trim(),
         timestamp: Timestamp.now(),
       );
@@ -40,7 +40,7 @@ class FirebaseGroupService {
     }
   }
 
-  /// ✅ Fetch Messages
+  ///  Fetch Messages
   Stream<List<Message>> getGroupMessages(String groupId) {
     return _groupsCollection
         .doc(groupId)
@@ -52,7 +52,7 @@ class FirebaseGroupService {
             .toList());
   }
 
-  /// ✅ Add Member to Group by Username
+  /// Add Member to Group by Username
   Future<bool> addMemberByUsername(String groupId, String username) async {
     try {
       QuerySnapshot userSnapshot = await _usersCollection
@@ -67,7 +67,7 @@ class FirebaseGroupService {
           'members': FieldValue.arrayUnion([userIdToAdd])
         });
 
-        return true; // ✅ Member added
+        return true; // Member added
       }
       return false; // ❌ User not found
     } catch (e) {
@@ -76,7 +76,7 @@ class FirebaseGroupService {
     }
   }
 
-  /// ✅ Fetch Group Members
+  /// Fetch Group Members
   Future<List<Map<String, dynamic>>> getGroupMembers(String groupId) async {
     try {
       DocumentSnapshot groupSnapshot = await _groupsCollection.doc(groupId).get();

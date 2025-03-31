@@ -2,15 +2,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:study_planner/services/firestore_service(users).dart';
+import 'profile_page.dart';
+import '../services/firestore_service(users).dart';
 
 class FollowersPage extends StatelessWidget {
   final FirebaseService firebaseService = FirebaseService();
+  final String userId;
+
+  FollowersPage({required this.userId});
 
   @override
   Widget build(BuildContext context) {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-
     return Scaffold(
       appBar: AppBar(title: Text("Followers")),
       body: StreamBuilder<DocumentSnapshot>(
@@ -33,13 +35,13 @@ class FollowersPage extends StatelessWidget {
             return Center(child: Text("No followers yet"));
           }
 
-          return _buildFollowersList(followers);
+          return _buildFollowersList(followers, context);
         },
       ),
     );
   }
 
-  Widget _buildFollowersList(List<String> followerIds) {
+  Widget _buildFollowersList(List<String> followerIds, BuildContext context) {
     if (followerIds.isEmpty) {
       return Center(child: Text("No followers yet"));
     }
@@ -68,10 +70,12 @@ class FollowersPage extends StatelessWidget {
           itemBuilder: (context, index) {
             var followerData = followers[index].data() as Map<String, dynamic>? ?? {};
             String followerUserId = followers[index].id;
+            String name = followerData['userName'] ?? 'Unknown';
+            String profileImage = followerData['profileImage'] ?? '';
 
             return ListTile(
               leading: FutureBuilder<String?>(
-                future: firebaseService.getFollowerProfileImage(followerUserId, followerData['profileImage']), // ✅ FIXED
+                future: firebaseService.getFollowerProfileImage(followerUserId, profileImage),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return CircleAvatar(
@@ -83,8 +87,6 @@ class FollowersPage extends StatelessWidget {
                   String? imagePath = snapshot.data;
                   bool imageExists = imagePath != null && File(imagePath).existsSync();
 
-                  print("Follower: $followerUserId -> Image Path: $imagePath | Exists: $imageExists");
-
                   return CircleAvatar(
                     backgroundImage: imageExists ? FileImage(File(imagePath!)) : null,
                     child: !imageExists ? Icon(Icons.person, color: Colors.white) : null,
@@ -92,20 +94,27 @@ class FollowersPage extends StatelessWidget {
                   );
                 },
               ),
-              title: Text(followerData['userName'] ?? "Unknown"),
+              title: Text(name),
               subtitle: Text(followerData['email'] ?? ""),
-              trailing: ElevatedButton(
-                onPressed: () {
-                  firebaseService.removeFollower(
-                      FirebaseAuth.instance.currentUser!.uid, followerUserId);
-                },
-                child: Text("Remove"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ProfilePage(userId: followerUserId)),
+                );
+              },
+              trailing: userId == FirebaseAuth.instance.currentUser!.uid
+                  ? ElevatedButton(
+                      onPressed: () {
+                        firebaseService.removeFollower(userId, followerUserId);
+                      },
+                      child: Text("Remove"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    )
+                  : null,
             );
           },
         );

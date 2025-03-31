@@ -52,7 +52,7 @@ class _NotesPageState extends State<NotesPage> {
   }
 
   await _firestoreService.addTask(
-    subject: _selectedSubject!, // ✅ Changed parameter to subject
+    subject: _selectedSubject!, // Changed parameter to subject
     taskName: _taskNameController.text,
     description: _descriptionController.text,
     dueDate: _selectedDueDate!,

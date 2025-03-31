@@ -31,7 +31,7 @@ class TaskCard extends StatelessWidget {
     bool isCompleted = taskData["isCompleted"] ?? false;
     String taskName = taskData['taskName'] ?? "No Task Name";
     String dueDate = taskData['dueDate'] ?? 'No Due Date';
-    String subject = taskData['subject'] ?? 'No Subject'; // ✅ Changed from subjectName to subject
+    String subject = taskData['subject'] ?? 'No Subject'; // Changed from subjectName to subject
 
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -58,7 +58,7 @@ class TaskCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Subject: $subject", // ✅ Now correctly retrieves "subject"
+              "Subject: $subject", // Now correctly retrieves "subject"
               style: TextStyle(
                 color: Colors.blueAccent,
                 fontWeight: FontWeight.w500,

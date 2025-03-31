@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // ✅ Follow a user
+  // Follow a user
   Future<void> followUser(String currentUserId, String targetUserId) async {
     var userRef = _firestore.collection('users');
 
@@ -37,7 +37,7 @@ class FirebaseService {
     }
   }
 
-  // ✅ Unfollow a user
+  // Unfollow a user
   Future<void> unfollowUser(String currentUserId, String targetUserId) async {
     var userRef = _firestore.collection('users');
 
@@ -67,7 +67,7 @@ class FirebaseService {
     }
   }
 
-  // ✅ Remove a follower
+  // Remove a follower
   Future<void> removeFollower(String currentUserId, String followerId) async {
     var userRef = _firestore.collection('users');
 
@@ -97,7 +97,7 @@ class FirebaseService {
     }
   }
 
-  // ✅ Save Profile Image Locally with Unique Filename
+  //  Save Profile Image Locally with Unique Filename
   Future<void> saveImageLocally(File imageFile, String userId) async {
     final directory = await getApplicationDocumentsDirectory();
     final localImagePath = '${directory.path}/profile_image_$userId.jpg'; // 🔥 Unique filename
@@ -110,7 +110,7 @@ class FirebaseService {
     print("✅ Saved image for $userId: $localImagePath");
   }
 
-  // ✅ Fetch the correct profile image for each follower
+  // Fetch the correct profile image for each follower
   Future<String?> getFollowerProfileImage(String userId, String? firestoreImagePath) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? imagePath = prefs.getString('profileImage_$userId'); // 🔥 Fetch per user
@@ -130,7 +130,7 @@ class FirebaseService {
     return null;
   }
 
-  // ✅ Fetch the correct profile image for each following user
+  // Fetch the correct profile image for each following user
   Future<String?> getFollowingProfileImage(String userId, String? firestoreImagePath) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? imagePath = prefs.getString('profileImage_$userId'); // 🔥 Fetch per user

@@ -76,7 +76,7 @@ class _ChatPageState extends State<ChatPage> {
             itemCount: groups.length,
             itemBuilder: (context, index) {
               var group = groups[index];
-              String groupId = group.id; //  Correctly fetching document ID
+              String groupId = group.id; // Correctly fetching document ID
               print("📌 Group Loaded: ${group['name']}"); // Debugging
 
               return ListTile(
@@ -89,7 +89,7 @@ class _ChatPageState extends State<ChatPage> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => GroupChatPage(
-                        groupId: groupId, //  Correct usage
+                        groupId: groupId, // Correct usage
                         groupName: group['name'],
                       ),
                     ),
