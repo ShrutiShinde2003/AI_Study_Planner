@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:study_planner/pages/bottom_navigation.dart';
 import 'package:study_planner/pages/gemini_ai.dart';
@@ -23,9 +24,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-
   await _setupFirebaseMessaging();
-
+  await _scheduleDueDateNotifications(); // 🔔 Schedule Task Notifications
   runApp(MyApp());
 }
 
@@ -41,6 +41,62 @@ Future<void> _setupFirebaseMessaging() async {
 
   // Handle background notifications
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+}
+
+// ✅ Moved _showNotification outside to make it globally accessible
+void _showNotification(String title, String body) {
+  _localNotifications.show(
+    0,
+    title,
+    body,
+    NotificationDetails(
+      android: AndroidNotificationDetails(
+        'channel_id',
+        'Task Reminders',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+    ),
+  );
+}
+
+// 🔔 Schedule task notifications based on due date
+Future<void> _scheduleDueDateNotifications() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  FirebaseFirestore.instance
+      .collection('tasks')
+      .where('uid', isEqualTo: user.uid)
+      .where('isCompleted', isEqualTo: false)
+      .snapshots()
+      .listen((snapshot) async {
+    for (var taskDoc in snapshot.docs) {
+      var taskData = taskDoc.data();
+      DateTime? dueDate = (taskData['dueDate'] as Timestamp?)?.toDate();
+      String taskName = taskData['taskName'] ?? "Task";
+
+      if (dueDate != null) {
+        DateTime now = DateTime.now();
+        Duration timeUntilDue = dueDate.difference(now);
+
+        // Notify user 8 hour before the task is due
+        if (timeUntilDue.inHours == 8 && timeUntilDue.inMinutes > 0) {
+          _showNotification("Upcoming Task", "$taskName is due in 8 hours.");
+        }
+
+        // Notify user 5 Hours before the task is due
+        if (timeUntilDue.inHours == 5 && timeUntilDue.inMinutes > 0) {
+          _showNotification("Reminder", "$taskName is due in 5 hours.");
+        }
+
+        // Notify user 1 hour before the task is due
+        if (timeUntilDue.inHours == 1 && timeUntilDue.inMinutes > 0) {
+          _showNotification("Reminder", "$taskName is due in 1 hour.");
+        }
+      }
+    }
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -74,22 +130,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
         _showNotification(notification.title ?? "New Message", notification.body ?? "");
       }
     });
-  }
-
-  void _showNotification(String title, String body) {
-    _localNotifications.show(
-      0,
-      title,
-      body,
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          'channel_id',
-          'Chat Notifications',
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
-      ),
-    );
   }
 
   @override

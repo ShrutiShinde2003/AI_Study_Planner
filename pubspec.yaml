@@ -48,6 +48,8 @@ dependencies:
   image_picker:
   path_provider:
   firebase_messaging:
+  timezone: 
+  #workmanager: 
 
 
 
