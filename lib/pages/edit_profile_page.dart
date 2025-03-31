@@ -119,7 +119,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<void> saveUserProfileImagePath(String userId, String imagePath) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('profileImage_$userId', imagePath);
-    print("✅ Saved Image for $userId: $imagePath");
+    print(" Saved Image for $userId: $imagePath");
   }
 
   /// Update Profile Image in Firestore
@@ -131,7 +131,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       'profileImage': imagePath,
     });
 
-    print("🔥 Firestore Updated Image Path: $imagePath");
+    print(" Firestore Updated Image Path: $imagePath");
   }
 
   /// 🔹 Save Updated User Profile

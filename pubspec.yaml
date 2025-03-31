@@ -47,7 +47,11 @@ dependencies:
   syncfusion_flutter_pdf: 
   image_picker:
   path_provider:
+<<<<<<< HEAD
   firebase_messaging:
+=======
+  mime:
+>>>>>>> ANISH
 
 
 
