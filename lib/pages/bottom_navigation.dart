@@ -27,7 +27,6 @@ class BottomNavigation extends StatefulWidget {
 class _BottomNavigationState extends State<BottomNavigation> {
   int _selectedIndex = 0;
   List<String> subjects = [];
-
   @override
   void initState() {
     super.initState();
