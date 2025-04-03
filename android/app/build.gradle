@@ -15,6 +15,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }          
+
     kotlinOptions {
         jvmTarget = "17"  // Ensure compatibility with Java 17
     }
@@ -25,6 +26,8 @@ android {
         targetSdk = 33  // Target latest SDK
         versionCode = 1
         versionName = "1.0"
+
+        multiDexEnabled true // ✅ Added MultiDex here
     }
 
     buildTypes {
@@ -47,6 +50,9 @@ dependencies {
     // Firebase dependencies
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-auth'
+
+    // ✅ Added MultiDex dependency
+    implementation 'androidx.multidex:multidex:2.0.1'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
