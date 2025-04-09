@@ -51,23 +51,25 @@ class _ProfilePageState extends State<ProfilePage> {
 
   /// **🔹 Fetch Recommended Users Based on Common Subjects**
   Future<void> fetchRecommendedUsers() async {
-    if (user == null || user!.subjects.isEmpty) return;
+  if (user == null || user!.subjects.isEmpty) return;
 
-    QuerySnapshot querySnapshot = await _firestore.collection('users').get();
+  QuerySnapshot querySnapshot = await _firestore.collection('users').get();
 
-    List<UserModel> allUsers = querySnapshot.docs
-        .map((doc) => UserModel.fromDocumentSnapshot(doc))
-        .where((u) => u.uid != user!.uid) // Exclude current user
-        .toList();
+  List<UserModel> allUsers = querySnapshot.docs
+      .map((doc) => UserModel.fromDocumentSnapshot(doc))
+      .where((u) => u.uid != user!.uid) // Exclude current user
+      .where((u) => !user!.following.contains(u.uid)) // Exclude already followed users
+      .toList();
 
-    List<UserModel> filteredUsers = allUsers.where((u) {
-      return u.subjects.any((subject) => user!.subjects.contains(subject));
-    }).toList();
+  List<UserModel> filteredUsers = allUsers.where((u) {
+    return u.subjects.any((subject) => user!.subjects.contains(subject));
+  }).toList();
 
-    setState(() {
-      recommendedUsers = filteredUsers.take(5).toList();
-    });
-  }
+  setState(() {
+    recommendedUsers = filteredUsers.take(5).toList();
+  });
+}
+
 
   Future<void> refreshProfile() async {
     fetchUserData();
@@ -142,15 +144,22 @@ class _ProfilePageState extends State<ProfilePage> {
     title: Text(user.userName),
     subtitle: Text(user.email),
     trailing: ElevatedButton(
-      onPressed: () {
-        _firestore.collection('users').doc(widget.userId).update({
+      onPressed: () async {
+        // Add user to the following list in Firestore
+        await _firestore.collection('users').doc(widget.userId).update({
           'following': FieldValue.arrayUnion([user.uid])
+        });
+
+        // Remove the user from the recommended list
+        setState(() {
+          recommendedUsers.removeWhere((u) => u.uid == user.uid);
         });
       },
       child: Text("Follow"),
     ),
   );
 }
+
 
   Widget _buildProfileImage() {
     return StreamBuilder<DocumentSnapshot>(
