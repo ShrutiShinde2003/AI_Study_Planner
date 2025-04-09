@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel {
-  String uid;
+  String uid; // ✅ Changed from uid to id for consistency
   String userName;
   String email;
   List<String> subjects;
@@ -12,12 +12,12 @@ class UserModel {
   int taskProgress; // Tracks completed tasks before reward
   int level; // User level
   int rewards; // Rewards earned
-  int streak; // NEW: Daily streak tracking
-  DateTime lastTaskDate; // NEW: Last task completed date
-  List<String> badges; // List of earned badges
+  int streak; // ✅ Daily streak tracking
+  DateTime lastTaskDate; // ✅ Last task completed date
+  List<String> badges; // ✅ List of earned badges
 
   UserModel({
-    required this.uid,
+    required this.uid, // ✅ Use id instead of uid for consistency
     required this.userName,
     required this.email,
     required this.subjects,
@@ -28,15 +28,15 @@ class UserModel {
     this.taskProgress = 0,
     this.level = 1,
     this.rewards = 0,
-    this.streak = 0, // Default streak is 0
-    DateTime? lastTaskDate, // Default to null
+    this.streak = 0, // ✅ Default streak is 0
+    DateTime? lastTaskDate, // ✅ Default to null
     this.badges = const [],
   }) : lastTaskDate = lastTaskDate ?? DateTime.now();
 
-  /// 🔄 Convert UserModel to Firestore Map
+  /// 🔄 Convert `UserModel` to Firestore Map
   Map<String, dynamic> toMap() {
     return {
-      'uid': uid,
+      'id': uid, // ✅ Use 'id' to match Firestore document ID
       'userName': userName,
       'email': email,
       'subjects': subjects,
@@ -47,17 +47,17 @@ class UserModel {
       'taskProgress': taskProgress,
       'level': level,
       'rewards': rewards,
-      'streak': streak, // Save streak
-      'lastTaskDate': Timestamp.fromDate(lastTaskDate), // Save last task date
+      'streak': streak, // ✅ Save streak
+      'lastTaskDate': Timestamp.fromDate(lastTaskDate), // ✅ Save last task date
       'badges': badges,
     };
   }
 
-  /// Convert Firestore Document to UserModel
+  /// 🔄 Convert Firestore Document to `UserModel`
   factory UserModel.fromDocumentSnapshot(DocumentSnapshot snapshot) {
     final data = snapshot.data() as Map<String, dynamic>;
     return UserModel(
-      uid: data['uid'] ?? '',
+      uid: snapshot.id, // ✅ Assign Firestore document ID
       userName: data['userName'] ?? '',
       email: data['email'] ?? '',
       subjects: List<String>.from(data['subjects'] ?? []),
@@ -68,8 +68,8 @@ class UserModel {
       taskProgress: data['taskProgress'] ?? 0,
       level: data['level'] ?? 1,
       rewards: data['rewards'] ?? 0,
-      streak: data['streak'] ?? 0, // Load streak from Firestore
-      lastTaskDate: (data['lastTaskDate'] as Timestamp?)?.toDate() ?? DateTime.now(), // Load last task date
+      streak: data['streak'] ?? 0, // ✅ Load streak from Firestore
+      lastTaskDate: (data['lastTaskDate'] as Timestamp?)?.toDate() ?? DateTime.now(), // ✅ Load last task date
       badges: List<String>.from(data['badges'] ?? []),
     );
   }
