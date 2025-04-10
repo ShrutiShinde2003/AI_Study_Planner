@@ -162,10 +162,11 @@ class _DashboardPageState extends State<DashboardPage> {
   // 🔹 Assign Unique Colors to Subjects
   Color _getColorForSubject(String subject) {
     const colors = [
-      Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple,
-      Colors.teal, Colors.pink, Colors.yellow, Colors.cyan, Colors.indigo,
+      Colors.blue, Colors.red, Color.fromARGB(255, 65, 221, 70), Colors.orange, Colors.purple,
+      Colors.teal, Color.fromARGB(255, 179, 22, 74), Colors.cyan, Colors.indigo,
       Colors.lime, Colors.brown,
     ];
     return colors[subject.hashCode % colors.length]; // Generates consistent color
-  }
+  
+}
 }

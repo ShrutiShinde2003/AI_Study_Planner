@@ -36,7 +36,7 @@ class GeminiApiService {
     }
 
     final response = await chat.sendMessage(Content('user', parts));
-    return response.text ?? "No response from AI.";
+    return response.text?.replaceAll('*', '').trim() ?? "No response from AI.";
   }
 
   /// Message & PDF Text for Summary/QA/Flashcard
@@ -50,7 +50,7 @@ class GeminiApiService {
       ]),
     );
 
-    return response.text ?? "No response from AI.";
+    return response.text?.replaceAll('*', '').trim() ?? "No response from AI.";
   }
 
   /// Extract Text from PDF
@@ -65,7 +65,7 @@ class GeminiApiService {
     }
 
     document.dispose();
-    return buffer.toString().replaceAll('*', '').replaceAll(RegExp(r'\n\s*\n'), '\n').trim();
+    return buffer.toString().replaceAll('', '').replaceAll(RegExp(r'\n\s\n'), '\n').trim();
   }
 
   /// Process PDF for Flashcards (When explicitly asked)
