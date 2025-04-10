@@ -9,7 +9,7 @@ class FollowersPage extends StatelessWidget {
   final FirebaseService firebaseService = FirebaseService();
   final String userId;
 
-  FollowersPage({required this.userId});
+  FollowersPage({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context) {
@@ -88,9 +88,9 @@ class FollowersPage extends StatelessWidget {
                   bool imageExists = imagePath != null && File(imagePath).existsSync();
 
                   return CircleAvatar(
-                    backgroundImage: imageExists ? FileImage(File(imagePath!)) : null,
-                    child: !imageExists ? Icon(Icons.person, color: Colors.white) : null,
+                    backgroundImage: imageExists ? FileImage(File(imagePath)) : null,
                     backgroundColor: Colors.grey[300],
+                    child: !imageExists ? Icon(Icons.person, color: Colors.white) : null,
                   );
                 },
               ),
@@ -107,12 +107,12 @@ class FollowersPage extends StatelessWidget {
                       onPressed: () {
                         firebaseService.removeFollower(userId, followerUserId);
                       },
-                      child: Text("Remove"),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.indigo,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
+                      child: Text("Remove"),
                     )
                   : null,
             );

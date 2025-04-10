@@ -35,7 +35,7 @@ dependencies:
   firebase_auth:
   path_provider_android:
   http:
-  flutter_local_notifications:
+  flutter_local_notifications: ^17.0.0
   shared_preferences:
   google_fonts:
   fl_chart:
@@ -115,4 +115,3 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-

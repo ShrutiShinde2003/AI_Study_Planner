@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SearchUsersPage extends StatefulWidget {
+  const SearchUsersPage({super.key});
+
   @override
   _SearchUsersPageState createState() => _SearchUsersPageState();
 }
@@ -23,7 +25,7 @@ class _SearchUsersPageState extends State<SearchUsersPage> {
       QuerySnapshot userNameResults = await firestore
           .collection('users')
           .where('userName', isGreaterThanOrEqualTo: query)
-          .where('userName', isLessThanOrEqualTo: query + '\uf8ff')
+          .where('userName', isLessThanOrEqualTo: '$query\uf8ff')
           .get();
 
       QuerySnapshot emailResults = await firestore

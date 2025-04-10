@@ -17,8 +17,8 @@ class BottomNavigation extends StatefulWidget {
     required this.todoPage,
     required this.GeminiPage,
     required this.profilePage,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _BottomNavigationState createState() => _BottomNavigationState();
@@ -59,7 +59,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> _pages = [
+    final List<Widget> pages = [
       widget.homePage,
       ToDoListPage(),
       widget.dashboardPage,
@@ -69,7 +69,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
     ];
 
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

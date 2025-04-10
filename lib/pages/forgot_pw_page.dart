@@ -31,7 +31,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               content: Text(e.message.toString()),
             );
           });
-    };
+    }
   }
 
   @override
@@ -58,8 +58,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             onPressed: () {
               passwordReset();
             },
-            child: Text('Reset Password'),
             color: Colors.deepPurple[200],
+            child: Text('Reset Password'),
           ),
           ],
       ),

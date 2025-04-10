@@ -7,11 +7,11 @@ class InteractiveFlashcard extends StatefulWidget {
   final VoidCallback? onReview; // Optional callback when marked for review
 
   const InteractiveFlashcard({
-    Key? key,
+    super.key,
     required this.flashcard,
     this.onKnown,
     this.onReview,
-  }) : super(key: key);
+  });
 
   @override
   State<InteractiveFlashcard> createState() => _InteractiveFlashcardState();

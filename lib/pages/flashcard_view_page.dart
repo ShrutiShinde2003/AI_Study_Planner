@@ -5,7 +5,7 @@ import '../pages/interactive_flashcard.dart'; // Importing from widgets folder
 class FlashcardViewPage extends StatelessWidget {
   final List<Flashcard> flashcards;
 
-  const FlashcardViewPage({Key? key, required this.flashcards}) : super(key: key);
+  const FlashcardViewPage({super.key, required this.flashcards});
 
   @override
   Widget build(BuildContext context) {

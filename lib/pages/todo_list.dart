@@ -11,7 +11,7 @@ import '../services/gamification_service.dart'; // Import Gamification Service
 final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
 class ToDoListPage extends StatefulWidget {
-  ToDoListPage();
+  const ToDoListPage({super.key});
 
   @override
   _ToDoListPageState createState() => _ToDoListPageState();

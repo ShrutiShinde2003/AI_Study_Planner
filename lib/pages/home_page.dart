@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:study_planner/pages/login_page.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -171,7 +172,7 @@ class _HomePageState extends State<HomePage> {
           Stack(
             alignment: Alignment.center,
             children: [
-              Container(
+              SizedBox(
                 width: 150,
                 height: 150,
                 child: CircularProgressIndicator(

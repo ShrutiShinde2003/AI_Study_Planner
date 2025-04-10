@@ -11,7 +11,7 @@ import 'package:study_planner/pages/flashcard_view_page.dart';
 class ChatSubjectScreen extends StatefulWidget {
   final String subject;
 
-  ChatSubjectScreen({required this.subject});
+  const ChatSubjectScreen({super.key, required this.subject});
 
   @override
   _ChatSubjectScreenState createState() => _ChatSubjectScreenState();
@@ -81,14 +81,14 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
 
   /// Command input dialog
   Future<void> _askCommand(File file, {required bool isImage}) async {
-    final TextEditingController _promptController = TextEditingController();
+    final TextEditingController promptController = TextEditingController();
 
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text("Command for ${isImage ? 'Image' : 'PDF'}"),
         content: TextField(
-          controller: _promptController,
+          controller: promptController,
           decoration: InputDecoration(hintText: "e.g., Summarize, Generate Flashcards"),
         ),
         actions: [
@@ -96,7 +96,7 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              final command = _promptController.text.trim();
+              final command = promptController.text.trim();
               if (command.isNotEmpty) await _processFile(file, command, isImage);
             },
             child: Text("Submit"),

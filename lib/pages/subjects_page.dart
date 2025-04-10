@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SubjectsPage extends StatefulWidget {
+  const SubjectsPage({super.key});
+
   @override
   _SubjectsPageState createState() => _SubjectsPageState();
 }
@@ -11,7 +13,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<String> subjects = [];
-  TextEditingController _subjectController = TextEditingController();
+  final TextEditingController _subjectController = TextEditingController();
 
   @override
   void initState() {

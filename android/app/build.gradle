@@ -2,7 +2,7 @@ plugins {
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
-    id "org.jetbrains.kotlin.android" version "1.9.20" apply false // added this line 
+    id "org.jetbrains.kotlin.android" version "2.1.0" apply false // added this line 
     id "com.google.gms.google-services"
 }
 
@@ -42,7 +42,7 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.20"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
     
     // Firebase BoM
     implementation platform('com.google.firebase:firebase-bom:33.5.1')

@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'group_chat_page.dart';
 
 class ChatPage extends StatefulWidget {
+  const ChatPage({super.key});
+
   @override
   _ChatPageState createState() => _ChatPageState();
 }

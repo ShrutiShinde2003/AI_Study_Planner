@@ -8,7 +8,7 @@ class TaskCard extends StatelessWidget {
   final VoidCallback? onCompleteTask;
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
-  TaskCard({
+  TaskCard({super.key, 
     required this.taskId,
     required this.taskData,
     this.onCompleteTask,
