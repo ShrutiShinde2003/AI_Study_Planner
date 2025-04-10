@@ -11,7 +11,7 @@ import '../services/gamification_service.dart';
 import '../models/user_model.dart';
 
 class ProfilePage extends StatefulWidget {
-  final String userId; // Now accepts userId for other profiles
+  final String userId;
 
   ProfilePage({required this.userId});
 
@@ -26,6 +26,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   UserModel? user;
   bool isCurrentUser = false;
+  List<UserModel> recommendedUsers = [];
 
   @override
   void initState() {
@@ -44,8 +45,31 @@ class _ProfilePageState extends State<ProfilePage> {
         user = UserModel.fromDocumentSnapshot(userDoc);
         isCurrentUser = widget.userId == _auth.currentUser?.uid;
       });
+      fetchRecommendedUsers();
     }
   }
+
+  /// **🔹 Fetch Recommended Users Based on Common Subjects**
+  Future<void> fetchRecommendedUsers() async {
+  if (user == null || user!.subjects.isEmpty) return;
+
+  QuerySnapshot querySnapshot = await _firestore.collection('users').get();
+
+  List<UserModel> allUsers = querySnapshot.docs
+      .map((doc) => UserModel.fromDocumentSnapshot(doc))
+      .where((u) => u.uid != user!.uid) // Exclude current user
+      .where((u) => !user!.following.contains(u.uid)) // Exclude already followed users
+      .toList();
+
+  List<UserModel> filteredUsers = allUsers.where((u) {
+    return u.subjects.any((subject) => user!.subjects.contains(subject));
+  }).toList();
+
+  setState(() {
+    recommendedUsers = filteredUsers.take(5).toList();
+  });
+}
+
 
   Future<void> refreshProfile() async {
     fetchUserData();
@@ -87,6 +111,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 isCurrentUser ? _buildAddFriendsButton() : Container(),
                 SizedBox(height: 30),
                 _buildGamificationProgress(),
+                SizedBox(height: 30),
+                _buildRecommendations(), // 🔹 Added Profile Recommendations Section
               ],
             ),
           ),
@@ -107,6 +133,33 @@ class _ProfilePageState extends State<ProfilePage> {
       ],
     );
   }
+
+  Widget _buildUserCard(UserModel user) {
+  return ListTile(
+    leading: CircleAvatar(
+      backgroundImage: user.profileImage.isNotEmpty
+          ? NetworkImage(user.profileImage)
+          : AssetImage("assets/default_avatar.png") as ImageProvider,
+    ),
+    title: Text(user.userName),
+    subtitle: Text(user.email),
+    trailing: ElevatedButton(
+      onPressed: () async {
+        // Add user to the following list in Firestore
+        await _firestore.collection('users').doc(widget.userId).update({
+          'following': FieldValue.arrayUnion([user.uid])
+        });
+
+        // Remove the user from the recommended list
+        setState(() {
+          recommendedUsers.removeWhere((u) => u.uid == user.uid);
+        });
+      },
+      child: Text("Follow"),
+    ),
+  );
+}
+
 
   Widget _buildProfileImage() {
     return StreamBuilder<DocumentSnapshot>(
@@ -210,6 +263,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  /// **✅ Merged `_progressCircle` Method**
   Widget _progressCircle(String title, int value, double progress, Color color) {
     return Column(
       children: [
@@ -235,4 +289,24 @@ class _ProfilePageState extends State<ProfilePage> {
       ],
     );
   }
+
+  /// **✅ Merged `_buildRecommendations` Method**
+  Widget _buildRecommendations() {
+  if (recommendedUsers.isEmpty) return SizedBox();
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text("People You May Know",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      SizedBox(height: 10),
+      Column(
+        children: recommendedUsers
+            .map<Widget>((user) => _buildUserCard(user)) // Explicitly specify `Widget`
+            .toList(),
+      ),
+    ],
+  );
+}
+
 }
