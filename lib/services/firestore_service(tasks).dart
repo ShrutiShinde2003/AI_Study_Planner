@@ -59,6 +59,11 @@ class FirestoreService {
           throw Exception("Unauthorized: You can only update your own tasks.");
         }
 
+        // ⚠️ Prevent 'uid' field from being altered
+        if (updatedData.containsKey('uid') && updatedData['uid'] != user.uid) {
+          throw Exception("Cannot change task ownership.");
+        }
+
         await _taskCollection.doc(taskId).update(updatedData);
         print("✅ Task updated successfully!");
       } catch (e) {

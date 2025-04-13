@@ -27,6 +27,8 @@ dependencies:
   syncfusion_flutter_pdf: 
   image_picker:
   path_provider:
+  mime:
+  firebase_messaging:
 
 
 

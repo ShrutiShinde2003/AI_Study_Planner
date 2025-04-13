@@ -31,15 +31,15 @@ class _ChatPageState extends State<ChatPage> {
       await groupRef.set({
         'name': groupName,
         'createdBy': user.uid,
-        'members': [user.uid], // ✅ Ensure it's stored as an array
+        'members': [user.uid], // Ensure it's stored as an array
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      print("✅ Group Created: ${groupRef.id}");
+      print(" Group Created: ${groupRef.id}");
       _groupNameController.clear();
       Navigator.pop(context);
     } catch (e) {
-      print("❌ Error creating group: $e");
+      print(" Error creating group: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error creating group. Try again!")),
       );
@@ -76,7 +76,7 @@ class _ChatPageState extends State<ChatPage> {
             itemCount: groups.length,
             itemBuilder: (context, index) {
               var group = groups[index];
-              String groupId = group.id; // ✅ Correctly fetching document ID
+              String groupId = group.id; //  Correctly fetching document ID
               print("📌 Group Loaded: ${group['name']}"); // Debugging
 
               return ListTile(
@@ -89,7 +89,7 @@ class _ChatPageState extends State<ChatPage> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => GroupChatPage(
-                        groupId: groupId, // ✅ Correct usage
+                        groupId: groupId, //  Correct usage
                         groupName: group['name'],
                       ),
                     ),

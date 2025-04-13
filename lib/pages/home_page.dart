@@ -92,19 +92,20 @@ class _HomePageState extends State<HomePage> {
     double progress = (completedTasks % 5) / 5.0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Home page"),
-        automaticallyImplyLeading: false,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          // ✅ Fix overflow issue
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.indigo.shade100, Colors.indigo.shade200],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(16.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _buildWelcomeMessage(),
+                _buildTopSection(),
                 SizedBox(height: 20),
                 _buildXPProgress(),
                 SizedBox(height: 20),
@@ -121,57 +122,96 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// 🏆 Welcome Message
-  Widget _buildWelcomeMessage() {
-    return userData == null
-        ? Center(child: CircularProgressIndicator())
-        : Center(
-            child: Column(
-              children: [
-                Text(
-                  'Welcome, ${userData!['userName']}!',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          );
-  }
-
-  /// 🔥 XP & Level Progress Bar
-  Widget _buildXPProgress() {
-    return Column(
-      children: [
-        Text("💎 XP: $xp",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        SizedBox(height: 10),
-        LinearProgressIndicator(
-          value: (xp % 100) / 100,
-          backgroundColor: Colors.grey[300],
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-          minHeight: 8,
+  Widget _buildTopSection() {
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.indigo.shade400, Colors.indigo.shade300],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(30),
+            bottomRight: Radius.circular(30),
+          ),
         ),
-        SizedBox(height: 10),
-        Text("Earn ${(100 - (xp % 100))} XP to level up!"),
-      ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Home",
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Hello, ${userData?['userName']}! 🎓',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(height: 5),
+            Text(
+              "Let's stay on track with your study goals!",
+              style:
+                  TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.8)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  /// 🔥 Milestone Progress Section
+  /// 💎 **XP Progress**
+  Widget _buildXPProgress() {
+    return _buildGlassContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("💎 XP: $xp",
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple)),
+          SizedBox(height: 10),
+          LinearProgressIndicator(
+            value: (xp % 100) / 100,
+            backgroundColor: Colors.grey[300],
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+            minHeight: 8,
+          ),
+          SizedBox(height: 10),
+          Text("Earn ${(100 - (xp % 100))} XP to level up!",
+              style: TextStyle(color: Colors.black54)),
+        ],
+      ),
+    );
+  }
+
+  /// 🎯 **Milestone Progress**
   Widget _buildMilestoneProgress(double progress) {
-    return Center(
+    return _buildGlassContainer(
       child: Column(
         children: [
-          Text(
-            "Milestone Level: $milestoneLevel",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
+          Text("🎯 Milestone Level: $milestoneLevel",
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple)),
           SizedBox(height: 10),
           Stack(
             alignment: Alignment.center,
             children: [
-              Container(
-                width: 150,
-                height: 150,
+              SizedBox(
+                width: 130,
+                height: 130,
                 child: CircularProgressIndicator(
                   value: progress,
                   backgroundColor: Colors.grey[300],
@@ -181,27 +221,33 @@ class _HomePageState extends State<HomePage> {
               ),
               Text(
                 "${(progress * 100).toInt()}%",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple),
               ),
             ],
           ),
           SizedBox(height: 10),
           Text(
             "Complete ${(5 - (completedTasks % 5))} more tasks to unlock the next milestone!",
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+            style: TextStyle(fontSize: 16, color: Colors.black54),
           ),
         ],
       ),
     );
   }
 
-  /// 🏅 Badges Section
+  /// 🏅 **Badges Section**
   Widget _buildBadges() {
-    return Center(
+    return _buildGlassContainer(
       child: Column(
         children: [
           Text("🏅 Current Badge",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple)),
           SizedBox(height: 10),
           Container(
             padding: EdgeInsets.all(12),
@@ -211,22 +257,28 @@ class _HomePageState extends State<HomePage> {
           ),
           SizedBox(height: 10),
           Text(currentBadge,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87)),
           SizedBox(height: 5),
           Text("Earn new badges every 15 tasks!",
-              style: TextStyle(fontSize: 16, color: Colors.grey)),
+              style: TextStyle(fontSize: 16, color: Colors.black54)),
         ],
       ),
     );
   }
 
-  /// ✅ Completed Tasks Counter
+  /// ✅ **Completed Tasks Counter**
   Widget _buildCompletedTasks() {
-    return Center(
+    return _buildGlassContainer(
       child: Column(
         children: [
           Text("✅ Completed Tasks",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple)),
           SizedBox(height: 10),
           Text(
             "$completedTasks Tasks Completed",
@@ -235,6 +287,27 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 📌 **Reusable Glassmorphism Container**
+  Widget _buildGlassContainer({required Widget child}) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }

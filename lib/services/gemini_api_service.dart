@@ -1,17 +1,21 @@
+import 'dart:convert';
 import 'dart:io';
-import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:mime/mime.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:study_planner/config/api_keys.dart';
+import 'package:study_planner/models/flashcard_model.dart';
 
 class GeminiApiService {
-  final String apiKey;
-  late GenerativeModel model;
+  final String apiKey = ApiKeys.geminiApiKey;
+  late final GenerativeModel _model;
 
-  GeminiApiService(this.apiKey) {
-    model = GenerativeModel(
+  GeminiApiService() {
+    _model = GenerativeModel(
       model: 'gemini-1.5-flash',
       apiKey: apiKey,
       generationConfig: GenerationConfig(
-        temperature: 1,
+        temperature: 0.7,
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 8192,
@@ -20,115 +24,137 @@ class GeminiApiService {
     );
   }
 
-  /// 🔹 Sends a message to Gemini AI and returns the response.
-  Future<String> sendMessage(String userInput) async {
-    try {
-      final chat = model.startChat(history: []);
-      final content = Content.text(userInput);
-      final response = await chat.sendMessage(content);
-      return response.text ?? "No response from Gemini AI.";
-    } catch (e) {
-      return "Error: ${e.toString()}";
+  /// ✅ Text message & Optional Image for Q&A or Flashcard if asked
+  Future<String> sendMessageWithOptionalImage(String userInput,
+      {File? imageFile}) async {
+    final chat = _model.startChat();
+    List<Part> parts = [TextPart(userInput)];
+
+    if (imageFile != null) {
+      final bytes = await imageFile.readAsBytes();
+      final mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
+      parts.add(DataPart(mimeType, bytes));
     }
+
+    final response = await chat.sendMessage(Content('user', parts));
+    return response.text ?? "No response from AI.";
   }
 
-  /// 🔹 Processes a PDF file and generates flashcards.
-  Future<List<Map<String, String>>> processPDF(File file) async {
-    try {
-      // Read the PDF file
-      List<int> bytes = await file.readAsBytes();
-      final PdfDocument document = PdfDocument(inputBytes: bytes);
+  /// ✅ Message & PDF Text for Summary/QA/Flashcard
+  Future<String> sendMessageWithOptionalPdf(String userInput,
+      {required File pdfFile}) async {
+    final extractedText = await _extractTextFromPDF(pdfFile);
+    final chat = _model.startChat();
 
-      // Extract text from all pages
-      StringBuffer extractedText = StringBuffer();
-      for (int i = 0; i < document.pages.count; i++) {
-        String pageText =
-            PdfTextExtractor(document).extractText(startPageIndex: i);
-        extractedText.writeln(pageText.trim());
-      }
+    final response = await chat.sendMessage(
+      Content('user', [
+        TextPart("$userInput\n\nHere is the extracted text:\n$extractedText")
+      ]),
+    );
 
-      document.dispose(); // Free memory
+    return response.text ?? "No response from AI.";
+  }
 
-      // Clean extracted text (remove asterisks, extra spaces, and blank lines)
-      String cleanText = extractedText
-          .toString()
-          .replaceAll('*', '') // Remove asterisks
-          .replaceAll(RegExp(r'\n\s*\n'), '\n') // Remove excessive blank lines
-          .trim();
+  /// ✅ Extract Text from PDF
+  Future<String> _extractTextFromPDF(File file) async {
+    final bytes = await file.readAsBytes();
+    final document = PdfDocument(inputBytes: bytes);
+    final buffer = StringBuffer();
 
-      if (cleanText.isEmpty) {
-        return [
-          {
-            "question": "Error",
-            "answer": "PDF is empty or text could not be extracted."
-          }
-        ];
-      }
+    for (int i = 0; i < document.pages.count; i++) {
+      final text = PdfTextExtractor(document).extractText(startPageIndex: i);
+      buffer.writeln(text.trim());
+    }
 
-      print(
-          "Extracted PDF Text: ${cleanText.substring(0, 500)}..."); // Debugging
+    document.dispose();
+    return buffer
+        .toString()
+        .replaceAll('*', '')
+        .replaceAll(RegExp(r'\n\s*\n'), '\n')
+        .trim();
+  }
 
-      // 🔹 Send extracted text to Gemini AI for flashcard generation
-      String responseText = await sendMessage(
+  /// ✅ Process PDF for Flashcards (When explicitly asked)
+  Future<List<Flashcard>> processPDF(File file) async {
+    final extractedText = await _extractTextFromPDF(file);
+
+    if (extractedText.isEmpty) {
+      return [
+        Flashcard(
+            question: "Error",
+            answer: "PDF is empty or could not extract text.")
+      ];
+    }
+
+    final chat = _model.startChat();
+    final prompt =
         "Generate multiple flashcards covering all key concepts from this text. "
         "Each flashcard should be formatted as follows:\n"
         "Flashcard 1\nFront: [Question]\nBack: [Answer]\n\n"
-        "Flashcard 2\nFront: [Question]\nBack: [Answer]\n\n"
-        "Here is the extracted text:\n\n$cleanText",
-      );
+        "Here is the extracted text:\n$extractedText";
 
-      print("AI Response: ${responseText.substring(0, 500)}..."); // Debugging
+    final response =
+        await chat.sendMessage(Content('user', [TextPart(prompt)]));
+    final flashcards = extractFlashcards(response.text ?? "");
 
-      // 🔹 Extract flashcards from AI response
-      List<Map<String, String>> flashcards = extractFlashcards(responseText);
-
-      if (flashcards.isEmpty) {
-        return [
-          {
-            "question": "Error",
-            "answer": "No flashcards were generated. Try a different PDF."
-          }
-        ];
-      }
-
-      return flashcards;
-    } catch (e) {
-      return [
-        {"question": "Error", "answer": "Failed to process PDF: $e"}
-      ];
-    }
+    return flashcards.isNotEmpty
+        ? flashcards
+        : [
+            Flashcard(
+              question: "Error",
+              answer: "No flashcards were generated. Try different content.",
+            )
+          ];
   }
 
-  /// 🔹 Extracts flashcards from AI response
-  List<Map<String, String>> extractFlashcards(String text) {
-    List<Map<String, String>> flashcards = [];
-    List<String> lines = text.split('\n');
+  /// ✅ Extract Flashcards for Image or PDF (Based on AI response)
+  List<Flashcard> extractFlashcards(String responseText) {
+    final List<Flashcard> flashcards = [];
+    final lines = responseText
+        .split('\n')
+        .map((line) => line.trim().replaceAll('*', ''))
+        .toList();
 
     String? question;
     String? answer;
 
-    for (String line in lines) {
-      line = line.replaceAll('*', '').trim(); // Remove unwanted asterisks
-      if (line.isEmpty) continue;
-
-      if (line.startsWith("Flashcard")) {
+    for (var line in lines) {
+      if (line.toLowerCase().startsWith('flashcard')) {
         if (question != null && answer != null) {
-          flashcards.add({"question": question, "answer": answer});
+          flashcards.add(Flashcard(question: question, answer: answer));
         }
         question = null;
         answer = null;
-      } else if (line.startsWith("Front:")) {
-        question = line.replaceFirst("Front:", "").trim();
-      } else if (line.startsWith("Back:")) {
-        answer = line.replaceFirst("Back:", "").trim();
+      } else if (line.toLowerCase().startsWith('front:')) {
+        question = line
+            .replaceFirst(RegExp(r'front:', caseSensitive: false), '')
+            .trim();
+      } else if (line.toLowerCase().startsWith('back:')) {
+        answer = line
+            .replaceFirst(RegExp(r'back:', caseSensitive: false), '')
+            .trim();
       }
     }
 
-    // Add the last flashcard if valid
+    // ✅ Add the last flashcard if present
     if (question != null && answer != null) {
-      flashcards.add({"question": question, "answer": answer});
+      flashcards.add(Flashcard(question: question, answer: answer));
     }
 
     return flashcards;
+  }
+
+  /// ✅ General Purpose Analyzer: Check if Flashcard Generation Command
+  bool isFlashcardCommand(String command) {
+    final lowerCommand = command.toLowerCase();
+    return lowerCommand.contains("flashcard") ||
+        lowerCommand.contains("generate flashcards");
+  }
+
+  /// ✅ General Purpose Analyzer: Check if Summary Command
+  bool isSummaryCommand(String command) {
+    final lowerCommand = command.toLowerCase();
+    return lowerCommand.contains("summarize") ||
+        lowerCommand.contains("summary");
   }
 }
