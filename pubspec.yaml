@@ -49,6 +49,7 @@ dependencies:
   path_provider:
   firebase_messaging:
   timezone: 
+  provider:
   #workmanager: 
 
 

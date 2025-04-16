@@ -100,4 +100,15 @@ class FirebaseGroupService {
       return [];
     }
   }
+
+  /// Leave Group (Removes current user from group's members list)
+Future<void> leaveGroup(String groupId) async {
+  final user = _auth.currentUser;
+  if (user != null) {
+    await _groupsCollection.doc(groupId).update({
+      'members': FieldValue.arrayRemove([user.uid])
+    });
+  }
+}
+
 }

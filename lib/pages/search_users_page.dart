@@ -118,63 +118,89 @@ class _SearchUsersPageState extends State<SearchUsersPage> {
       print("❌ Error unfollowing user: $e");
     }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Search Users")),
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: searchUsers,
-              decoration: InputDecoration(
-                labelText: "Search by Username or Email",
-                prefixIcon: Icon(Icons.search),
-              ),
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: Text("Search Users"),
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
+      elevation: 1,
+    ),
+    backgroundColor: Colors.grey[100],
+    body: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: TextField(
+            controller: _searchController,
+            onChanged: searchUsers,
+            decoration: InputDecoration(
+              hintText: "Search by username or email",
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: Colors.white,
             ),
           ),
-          Expanded(
-            child: ListView(
-              children: searchResults.map((user) {
-                return ListTile(
-                  title: Text(user['userName']),
-                  subtitle: Text(user['email']),
+        ),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            itemCount: searchResults.length,
+            separatorBuilder: (_, __) => SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final user = searchResults[index];
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ListTile(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  title: Text(user['userName'], style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(user['email'], style: TextStyle(color: Colors.grey[700])),
                   trailing: StreamBuilder<DocumentSnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('users')
                         .doc(FirebaseAuth.instance.currentUser!.uid)
                         .snapshots(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData || snapshot.data == null) {
-                        return SizedBox();
-                      }
+                      if (!snapshot.hasData || snapshot.data == null) return SizedBox();
 
                       var currentUserData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
                       List<dynamic> followingList = currentUserData['following'] ?? [];
-
                       bool isFollowing = followingList.contains(user.id);
 
                       return ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isFollowing ? Colors.grey[300] : Colors.blueAccent,
+                          foregroundColor: isFollowing ? Colors.black87 : Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
                         onPressed: () {
-                          if (isFollowing) {
-                            unfollowUser(user.id);
-                          } else {
-                            followUser(user.id);
-                          }
+                          isFollowing ? unfollowUser(user.id) : followUser(user.id);
                         },
                         child: Text(isFollowing ? "Unfollow" : "Follow"),
                       );
                     },
                   ),
-                );
-              }).toList(),
-            ),
+                ),
+              );
+            },
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 }

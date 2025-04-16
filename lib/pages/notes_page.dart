@@ -62,51 +62,6 @@ class _NotesPageState extends State<NotesPage> {
 }
 
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Add Task")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // 🔹 Subject Dropdown
-            DropdownButtonFormField<String>(
-              value: _selectedSubject,
-              onChanged: (value) {
-                setState(() {
-                  _selectedSubject = value!;
-                });
-              },
-              items: _subjects
-                  .map((subject) => DropdownMenuItem(
-                        value: subject,
-                        child: Text(subject),
-                      ))
-                  .toList(),
-              decoration: InputDecoration(labelText: "Select Subject"),
-            ),
-
-            TextField(controller: _taskNameController, decoration: InputDecoration(labelText: "Task Name")),
-            TextField(controller: _descriptionController, decoration: InputDecoration(labelText: "Description")),
-            SizedBox(height: 10),
-
-            ElevatedButton(
-              onPressed: () => _selectDate(context),
-              child: Text(_selectedDueDate == null ? "Select Due Date" : "Due: ${_selectedDueDate!.toLocal()}"),
-            ),
-
-            SizedBox(height: 20),
-
-            ElevatedButton(
-              onPressed: _addTask,
-              child: Text("Add Task"),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -122,4 +77,113 @@ class _NotesPageState extends State<NotesPage> {
     }
   }
 
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.indigo.shade50,
+    appBar: AppBar(
+      title: const Text("Add Task"),
+      backgroundColor: Colors.indigo.shade50,
+      elevation: 0,
+    ),
+    body: Padding(
+      padding: const EdgeInsets.all(20),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// 🔹 Subject Dropdown
+            const Text("Select Subject", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: _selectedSubject,
+              onChanged: (value) {
+                setState(() {
+                  _selectedSubject = value!;
+                });
+              },
+              items: _subjects
+                  .map((subject) => DropdownMenuItem(
+                        value: subject,
+                        child: Text(subject),
+                      ))
+                  .toList(),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            /// 🔹 Task Name
+            const Text("Task Name", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _taskNameController,
+              decoration: InputDecoration(
+                hintText: "Enter task title",
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            /// 🔹 Description
+            const Text("Description", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _descriptionController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: "Enter task description",
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            /// 🔹 Due Date
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo.shade50,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => _selectDate(context),
+              icon: const Icon(Icons.calendar_today),
+              label: Text(
+                _selectedDueDate == null
+                    ? "Select Due Date"
+                    : "Due: ${_selectedDueDate!.toLocal().toString().split(' ')[0]}",
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            /// 🔹 Add Task Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _addTask,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo.shade50,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text(
+                  "Add Task",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 }

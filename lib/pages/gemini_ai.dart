@@ -32,32 +32,52 @@ class _ChatScreenState extends State<ChatScreen> {
       });
     }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Subject Chats")),
-      body: subjects.isEmpty
-          ? Center(child: Text("No subjects added. Add subjects in Profile."))
-          : ListView.builder(
-              itemCount: subjects.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(subjects[index]),
-                  leading: Icon(Icons.chat, color: Colors.blue),
-                  trailing: Icon(Icons.arrow_forward_ios),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ChatSubjectScreen(subject: subjects[index]),
-                      ),
-                    );
-                  },
-                );
-              },
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.indigo.shade50,
+    appBar: AppBar(
+      title: Text("Subject Chats"),
+      backgroundColor: Colors.indigo.shade50,
+    ),
+    body: subjects.isEmpty
+        ? Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text(
+                "No subjects added yet.\nGo to your profile to add subjects.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
+              ),
             ),
-    );
-  }
+          )
+        : ListView.separated(
+            itemCount: subjects.length,
+            separatorBuilder: (context, index) => Divider(height: 1),
+            itemBuilder: (context, index) {
+              final subject = subjects[index];
+              return ListTile(
+                title: Text(
+                  subject,
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                leading: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.chat_bubble_outline, color: Colors.indigo[700]),
+                ),
+                trailing: Icon(Icons.arrow_forward_ios_rounded, size: 18),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatSubjectScreen(subject: subject),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+  );
+}
+
 }

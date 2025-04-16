@@ -184,7 +184,14 @@ Widget build(BuildContext context) {
   String userId = _auth.currentUser!.uid;
 
   return Scaffold(
-    appBar: AppBar(title: Text("${widget.subject} Chat")),
+    appBar: AppBar(
+      title: Text("${widget.subject} Chat"),
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
+      elevation: 0.5,
+      centerTitle: true,
+    ),
+    backgroundColor: Color(0xFFF7F7F7),
     body: Stack(
       children: [
         Column(
@@ -198,25 +205,48 @@ Widget build(BuildContext context) {
                     .orderBy('timestamp')
                     .snapshots(),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData)
+                  if (!snapshot.hasData) {
                     return Center(child: CircularProgressIndicator());
+                  }
 
                   final messages = snapshot.data!.docs;
                   return ListView(
                     controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                     children: messages.map((msg) {
                       final isUser = msg['sender'] == 'user';
                       return Align(
-                        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment:
+                            isUser ? Alignment.centerRight : Alignment.centerLeft,
                         child: Container(
-                          padding: EdgeInsets.all(12),
+                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
                           margin: EdgeInsets.symmetric(vertical: 4),
+                          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
                           decoration: BoxDecoration(
-                            color: isUser ? Colors.blue[200] : Colors.grey[300],
-                            borderRadius: BorderRadius.circular(12),
+                            color: isUser ? Colors.blueAccent : Colors.grey.shade300,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              topRight: Radius.circular(16),
+                              bottomLeft:
+                                  isUser ? Radius.circular(16) : Radius.circular(0),
+                              bottomRight:
+                                  isUser ? Radius.circular(0) : Radius.circular(16),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          child: Text(msg['text']),
+                          child: Text(
+                            msg['text'],
+                            style: TextStyle(
+                              color: isUser ? Colors.white : Colors.black87,
+                              fontSize: 15,
+                            ),
+                          ),
                         ),
                       );
                     }).toList(),
@@ -226,40 +256,59 @@ Widget build(BuildContext context) {
             ),
             if (_isLoading)
               Padding(
-                padding: const EdgeInsets.all(8),
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  CircularProgressIndicator(),
-                  SizedBox(width: 10),
-                  Text("Processing...", style: TextStyle(fontSize: 16)),
-                ]),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 10),
+                    Text("Processing...", style: TextStyle(fontSize: 15)),
+                  ],
+                ),
               ),
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(12.0),
               child: Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: _controller,
                       decoration: InputDecoration(
-                        labelText: "Ask something...",
-                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 16),
+                        hintText: "Ask something...",
+                        fillColor: Colors.white,
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
                   ),
-                  SizedBox(width: 10),
+                  SizedBox(width: 8),
                   IconButton(
                     icon: Icon(Icons.upload_file, color: Colors.deepPurple),
                     onPressed: uploadFileAndCommand,
                   ),
-                  IconButton(
-                    icon: Icon(Icons.send, color: Colors.blue),
-                    onPressed: () {
-                      final text = _controller.text.trim();
-                      if (text.isNotEmpty) {
-                        sendMessage(text);
-                        _controller.clear();
-                      }
-                    },
+                  SizedBox(width: 4),
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.blueAccent,
+                    child: IconButton(
+                      icon: Icon(Icons.send, color: Colors.white),
+                      onPressed: () {
+                        final text = _controller.text.trim();
+                        if (text.isNotEmpty) {
+                          sendMessage(text);
+                          _controller.clear();
+                        }
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -268,27 +317,20 @@ Widget build(BuildContext context) {
         ),
         if (_showScrollToBottomButton)
           Positioned(
-            bottom: 80,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                  shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
-                ),
-                child: IconButton(
-                  icon: Icon(Icons.arrow_downward, color: Colors.white, size: 20),
-                  onPressed: () {
-                    _scrollController.animateTo(
-                      _scrollController.position.maxScrollExtent,
-                      duration: Duration(milliseconds: 300),
-                      curve: Curves.easeOut,
-                    );
-                  },
-                ),
-              ),
+            bottom: 90,
+            right: 20,
+            child: FloatingActionButton(
+              mini: true,
+              backgroundColor: Colors.blueAccent,
+              elevation: 4,
+              onPressed: () {
+                _scrollController.animateTo(
+                  _scrollController.position.maxScrollExtent,
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
+              },
+              child: Icon(Icons.arrow_downward, color: Colors.white),
             ),
           ),
       ],

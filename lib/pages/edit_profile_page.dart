@@ -200,49 +200,89 @@ class _EditProfilePageState extends State<EditProfilePage> {
       );
     }
   }
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: Text("Edit Profile"),
+      backgroundColor: Colors.white,
+      elevation: 1,
+      foregroundColor: Colors.black87,
+    ),
+    backgroundColor: Color(0xFFF9F9F9),
+    body: SingleChildScrollView(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              CircleAvatar(
+                radius: 55,
+                backgroundColor: Colors.grey.shade300,
+                backgroundImage: profileImagePath.isNotEmpty
+                    ? (profileImagePath.contains("assets/")
+                        ? AssetImage(profileImagePath) as ImageProvider
+                        : FileImage(File(profileImagePath)))
+                    : null,
+                child: profileImagePath.isEmpty
+                    ? Icon(Icons.person, size: 50, color: Colors.white)
+                    : null,
+              ),
+              GestureDetector(
+                onTap: _showImagePicker,
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Colors.blue,
+                  child: Icon(Icons.edit, color: Colors.white, size: 18),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 30),
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Edit Profile")),
-      body: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.grey.shade300,
-                  backgroundImage: profileImagePath.isNotEmpty
-                      ? (profileImagePath.contains("assets/")
-                          ? AssetImage(profileImagePath) as ImageProvider
-                          : FileImage(File(profileImagePath)))
-                      : null,
-                  child: profileImagePath.isEmpty
-                      ? Icon(Icons.person, size: 40, color: Colors.white)
-                      : null,
-                ),
-                GestureDetector(
-                  onTap: _showImagePicker,
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Colors.blue,
-                    child: Icon(Icons.edit, color: Colors.white, size: 18),
-                  ),
-                ),
-              ],
+          _buildTextField("Name", _nameController, TextInputType.name),
+          SizedBox(height: 16),
+          _buildTextField("Email", _emailController, TextInputType.emailAddress),
+          SizedBox(height: 16),
+          _buildTextField("New Password", _passwordController, TextInputType.visiblePassword, obscureText: true),
+
+          SizedBox(height: 30),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: saveProfile,
+              icon: Icon(Icons.save),
+              label: Text("Save Changes", style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 14),
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
             ),
-            SizedBox(height: 20),
-            TextField(controller: _nameController, decoration: InputDecoration(labelText: "Name")),
-            TextField(controller: _emailController, decoration: InputDecoration(labelText: "Email")),
-            TextField(controller: _passwordController, decoration: InputDecoration(labelText: "New Password"), obscureText: true),
-            SizedBox(height: 20),
-            ElevatedButton(onPressed: saveProfile, child: Text("Save")),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
+Widget _buildTextField(String label, TextEditingController controller, TextInputType keyboardType, {bool obscureText = false}) {
+  return TextField(
+    controller: controller,
+    keyboardType: keyboardType,
+    obscureText: obscureText,
+    decoration: InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.blue),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  );
+}
+
 }

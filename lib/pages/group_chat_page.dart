@@ -85,72 +85,123 @@ class _GroupChatPageState extends State<GroupChatPage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: Text(widget.groupName),
+  /// Leave Group Confirmation
+  void _confirmLeaveGroup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave Group'),
+        content: const Text('Are you sure you want to leave this group?'),
         actions: [
-          IconButton(icon: const Icon(Icons.people), onPressed: _showGroupMembers),
-          IconButton(icon: const Icon(Icons.person_add), onPressed: _addMemberByUsername),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              await _groupService.leaveGroup(widget.groupId);
+              Navigator.pop(context); // Leave chat screen
+            },
+            child: const Text('Leave'),
+          ),
         ],
       ),
-      body: Column(
-        children: [
-          /// Chat Messages
-          Expanded(
-            child: StreamBuilder<List<Message>>(
-              stream: _groupService.getGroupMessages(widget.groupId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return const Center(child: Text("Something went wrong. Please try again."));
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text("No messages yet. Start chatting!"));
-                }
+    );
+  }
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.grey[100],
+    appBar: AppBar(
+      title: Text(widget.groupName),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.people),
+          tooltip: "View Members",
+          onPressed: _showGroupMembers,
+        ),
+        IconButton(
+          icon: const Icon(Icons.person_add),
+          tooltip: "Add Member",
+          onPressed: _addMemberByUsername,
+        ),
+        IconButton(
+          icon: const Icon(Icons.exit_to_app),
+          tooltip: 'Leave Group',
+          onPressed: _confirmLeaveGroup,
+        ),
+      ],
+    ),
+    body: Column(
+      children: [
+        // Chat Messages
+        Expanded(
+          child: StreamBuilder<List<Message>>(
+            stream: _groupService.getGroupMessages(widget.groupId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return const Center(child: Text("Something went wrong. Please try again."));
+              }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text("No messages yet. Start chatting!"));
+              }
 
-                var messages = snapshot.data!;
-                return ListView.builder(
-                  reverse: true,
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    var message = messages[index];
-                    bool isMe = message.senderId == _auth.currentUser?.uid;
+              final messages = snapshot.data!;
+              return ListView.builder(
+                reverse: true,
+                itemCount: messages.length,
+                itemBuilder: (context, index) {
+                  final message = messages[index];
+                  final isMe = message.senderId == _auth.currentUser?.uid;
 
-                    return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                        decoration: BoxDecoration(
-                          color: isMe ? Colors.blueAccent : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              message.senderName, // Shows sender's username above message
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(message.text, style: const TextStyle(fontSize: 16)),
-                          ],
+                  return Align(
+                    alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                      padding: const EdgeInsets.all(12),
+                      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                      decoration: BoxDecoration(
+                        color: isMe ? Colors.indigo[200] : Colors.grey[300],
+                        borderRadius: BorderRadius.only(
+                          topLeft: const Radius.circular(12),
+                          topRight: const Radius.circular(12),
+                          bottomLeft: Radius.circular(isMe ? 12 : 0),
+                          bottomRight: Radius.circular(isMe ? 0 : 12),
                         ),
                       ),
-                    );
-                  },
-                );
-              },
-            ),
+                      child: Column(
+                        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            message.senderName,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            message.text,
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
           ),
+        ),
 
-          /// Message Input
-          Padding(
+        // Message Input
+        SafeArea(
+          child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
@@ -159,26 +210,31 @@ class _GroupChatPageState extends State<GroupChatPage> {
                     controller: _messageController,
                     textInputAction: TextInputAction.send,
                     decoration: InputDecoration(
-                      hintText: "Enter message...",
+                      hintText: "Type a message...",
                       filled: true,
                       fillColor: Colors.white,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                     onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
                 const SizedBox(width: 8),
                 FloatingActionButton(
+                  mini: true,
+                  backgroundColor: Colors.white,
                   onPressed: _sendMessage,
-                  child: const Icon(Icons.send),
-                  backgroundColor: Colors.blueAccent,
+                  child: const Icon(Icons.send, size: 20),
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 }

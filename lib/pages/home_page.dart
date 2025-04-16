@@ -87,93 +87,104 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
- 
+ @override
+Widget build(BuildContext context) {
+  double progress = (completedTasks % 5) / 5.0;
 
-  @override
-  Widget build(BuildContext context) {
-    double progress = (completedTasks % 5) / 5.0;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Home page"),
-        automaticallyImplyLeading: false,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          // Fix overflow issue
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _buildWelcomeMessage(),
-                SizedBox(height: 20),
-                _buildXPProgress(),
-                SizedBox(height: 20),
-                _buildMilestoneProgress(progress),
-                SizedBox(height: 20),
-                _buildBadges(),
-                SizedBox(height: 20),
-                _buildCompletedTasks(),
-              ],
-            ),
-          ),
+  return Scaffold(
+    backgroundColor: Colors.indigo.shade50,
+    appBar: AppBar(
+      title: Text("Home"),
+      backgroundColor: Colors.indigo.shade50,
+      automaticallyImplyLeading: false,
+    ),
+    body: SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildWelcomeCard(),
+            SizedBox(height: 16),
+            _buildXPCard(),
+            SizedBox(height: 16),
+            _buildMilestoneCard(progress),
+            SizedBox(height: 16),
+            _buildBadgeCard(),
+            SizedBox(height: 16),
+            _buildCompletedTasksCard(),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  /// 🏆 Welcome Message
-  Widget _buildWelcomeMessage() {
-    return userData == null
-        ? Center(child: CircularProgressIndicator())
-        : Center(
-            child: Column(
-              children: [
-                Text(
-                  'Welcome, ${userData!['userName']}!',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          );
-  }
-
-  /// 🔥 XP & Level Progress Bar
-  Widget _buildXPProgress() {
-    return Column(
-      children: [
-        Text("💎 XP: $xp",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        SizedBox(height: 10),
-        LinearProgressIndicator(
-          value: (xp % 100) / 100,
-          backgroundColor: Colors.grey[300],
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-          minHeight: 8,
-        ),
-        SizedBox(height: 10),
-        Text("Earn ${(100 - (xp % 100))} XP to level up!"),
-      ],
-    );
-  }
-
-  /// 🔥 Milestone Progress Section
-  Widget _buildMilestoneProgress(double progress) {
-    return Center(
+/// Welcome Message
+Widget _buildWelcomeCard() {
+  return Card(
+    elevation: 3,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    child: Padding(
+      padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text("Welcome back,", style: TextStyle(fontSize: 18)),
+          SizedBox(height: 6),
           Text(
-            "Milestone Level: $milestoneLevel",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            '${userData?['userName'] ?? "Learner"}',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// XP Progress
+Widget _buildXPCard() {
+  return Card(
+    elevation: 3,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("💎 XP: $xp", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 10),
+          LinearProgressIndicator(
+            value: (xp % 100) / 100,
+            backgroundColor: Colors.grey[300],
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+            minHeight: 10,
           ),
           SizedBox(height: 10),
+          Text("Earn ${100 - (xp % 100)} XP to level up!"),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Milestone Progress
+Widget _buildMilestoneCard(double progress) {
+  return Card(
+    elevation: 3,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Text("🎯 Milestone Level: $milestoneLevel", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          SizedBox(height: 16),
           Stack(
             alignment: Alignment.center,
             children: [
-              Container(
-                width: 150,
-                height: 150,
+              SizedBox(
+                width: 140,
+                height: 140,
                 child: CircularProgressIndicator(
                   value: progress,
                   backgroundColor: Colors.grey[300],
@@ -181,62 +192,64 @@ class _HomePageState extends State<HomePage> {
                   strokeWidth: 10,
                 ),
               ),
-              Text(
-                "${(progress * 100).toInt()}%",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
+              Text("${(progress * 100).toInt()}%", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             ],
           ),
-          SizedBox(height: 10),
-          Text(
-            "Complete ${(5 - (completedTasks % 5))} more tasks to unlock the next milestone!",
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
+          SizedBox(height: 16),
+          Text("Complete ${5 - (completedTasks % 5)} more tasks to level up!"),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
-  /// 🏅 Badges Section
-  Widget _buildBadges() {
-    return Center(
+/// Badge
+Widget _buildBadgeCard() {
+  return Card(
+    elevation: 3,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    child: Padding(
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          Text("🏅 Current Badge",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 10),
+          Text("🏅 Current Badge", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 12),
           Container(
-            padding: EdgeInsets.all(12),
-            decoration:
-                BoxDecoration(color: Colors.amber, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: Colors.amber,
+              shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+            ),
+            padding: EdgeInsets.all(16),
             child: Icon(Icons.emoji_events, size: 50, color: Colors.white),
           ),
           SizedBox(height: 10),
-          Text(currentBadge,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          SizedBox(height: 5),
-          Text("Earn new badges every 15 tasks!",
-              style: TextStyle(fontSize: 16, color: Colors.grey)),
+          Text(currentBadge, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text("Earn new badges every 15 tasks!", style: TextStyle(color: Colors.grey[600])),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
-  /// Completed Tasks Counter
-  Widget _buildCompletedTasks() {
-    return Center(
+/// Completed Tasks
+Widget _buildCompletedTasksCard() {
+  return Card(
+    elevation: 3,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    child: Padding(
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          Text("Completed Tasks",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 10),
+          Text("✅ Completed Tasks", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 12),
           Text(
             "$completedTasks Tasks Completed",
-            style: TextStyle(
-                fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

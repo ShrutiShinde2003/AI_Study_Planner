@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+
 import 'settings_page.dart';
 import 'edit_profile_page.dart';
 import 'search_users_page.dart';
@@ -9,6 +11,8 @@ import 'followers_page.dart';
 import 'following_page.dart';
 import '../services/gamification_service.dart';
 import '../models/user_model.dart';
+import '../main.dart'; // 🔥 For themeNotifier
+
 
 class ProfilePage extends StatefulWidget {
   final String userId;
@@ -49,27 +53,25 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  /// **🔹 Fetch Recommended Users Based on Common Subjects**
   Future<void> fetchRecommendedUsers() async {
-  if (user == null || user!.subjects.isEmpty) return;
+    if (user == null || user!.subjects.isEmpty) return;
 
-  QuerySnapshot querySnapshot = await _firestore.collection('users').get();
+    QuerySnapshot querySnapshot = await _firestore.collection('users').get();
 
-  List<UserModel> allUsers = querySnapshot.docs
-      .map((doc) => UserModel.fromDocumentSnapshot(doc))
-      .where((u) => u.uid != user!.uid) // Exclude current user
-      .where((u) => !user!.following.contains(u.uid)) // Exclude already followed users
-      .toList();
+    List<UserModel> allUsers = querySnapshot.docs
+        .map((doc) => UserModel.fromDocumentSnapshot(doc))
+        .where((u) => u.uid != user!.uid)
+        .where((u) => !user!.following.contains(u.uid))
+        .toList();
 
-  List<UserModel> filteredUsers = allUsers.where((u) {
-    return u.subjects.any((subject) => user!.subjects.contains(subject));
-  }).toList();
+    List<UserModel> filteredUsers = allUsers.where((u) {
+      return u.subjects.any((subject) => user!.subjects.contains(subject));
+    }).toList();
 
-  setState(() {
-    recommendedUsers = filteredUsers.take(5).toList();
-  });
-}
-
+    setState(() {
+      recommendedUsers = filteredUsers.take(5).toList();
+    });
+  }
 
   Future<void> refreshProfile() async {
     fetchUserData();
@@ -78,9 +80,11 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.indigo.shade50,
       appBar: AppBar(
-        title: Text(isCurrentUser ? "My Profile" : "Profile"),
+        title: Text("Profile"),
+        backgroundColor: Colors.indigo.shade50,
+        elevation: 0,
         actions: isCurrentUser
             ? [
                 IconButton(
@@ -108,11 +112,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 SizedBox(height: 20),
                 _buildFollowSection(),
                 SizedBox(height: 20),
-                isCurrentUser ? _buildAddFriendsButton() : Container(),
+                //if (isCurrentUser) _buildThemeToggle(), // 🌙 Theme toggle here
+                if (isCurrentUser) ...[
+                  SizedBox(height: 20),
+                  _buildAddFriendsButton(),
+                ],
                 SizedBox(height: 30),
                 _buildGamificationProgress(),
                 SizedBox(height: 30),
-                _buildRecommendations(), // 🔹 Added Profile Recommendations Section
+                _buildRecommendations(),
               ],
             ),
           ),
@@ -120,6 +128,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
 
   Widget _buildProfileHeader() {
     return Column(
@@ -133,33 +142,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ],
     );
   }
-
-  Widget _buildUserCard(UserModel user) {
-  return ListTile(
-    leading: CircleAvatar(
-      backgroundImage: user.profileImage.isNotEmpty
-          ? NetworkImage(user.profileImage)
-          : AssetImage("assets/default_avatar.png") as ImageProvider,
-    ),
-    title: Text(user.userName),
-    subtitle: Text(user.email),
-    trailing: ElevatedButton(
-      onPressed: () async {
-        // Add user to the following list in Firestore
-        await _firestore.collection('users').doc(widget.userId).update({
-          'following': FieldValue.arrayUnion([user.uid])
-        });
-
-        // Remove the user from the recommended list
-        setState(() {
-          recommendedUsers.removeWhere((u) => u.uid == user.uid);
-        });
-      },
-      child: Text("Follow"),
-    ),
-  );
-}
-
 
   Widget _buildProfileImage() {
     return StreamBuilder<DocumentSnapshot>(
@@ -180,10 +162,9 @@ class _ProfilePageState extends State<ProfilePage> {
           radius: 50,
           backgroundColor: Colors.grey.shade300,
           backgroundImage: imageUrl.isNotEmpty
-              ? (imageUrl.startsWith('http') ||
-                      imageUrl.startsWith('assets/')
-                  ? NetworkImage(imageUrl) as ImageProvider
-                  : FileImage(File(imageUrl)))
+              ? (imageUrl.startsWith('http') || imageUrl.startsWith('assets/')
+                  ? NetworkImage(imageUrl)
+                  : FileImage(File(imageUrl))) as ImageProvider
               : null,
           child: imageUrl.isEmpty
               ? Icon(Icons.person, size: 50, color: Colors.white)
@@ -263,7 +244,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  /// **✅ Merged `_progressCircle` Method**
   Widget _progressCircle(String title, int value, double progress, Color color) {
     return Column(
       children: [
@@ -290,23 +270,45 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  /// **✅ Merged `_buildRecommendations` Method**
   Widget _buildRecommendations() {
-  if (recommendedUsers.isEmpty) return SizedBox();
+    if (recommendedUsers.isEmpty) return SizedBox();
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text("People You May Know",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      SizedBox(height: 10),
-      Column(
-        children: recommendedUsers
-            .map<Widget>((user) => _buildUserCard(user)) // Explicitly specify `Widget`
-            .toList(),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("People You May Know",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        SizedBox(height: 10),
+        Column(
+          children: recommendedUsers
+              .map<Widget>((user) => _buildUserCard(user))
+              .toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserCard(UserModel user) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundImage: user.profileImage.isNotEmpty
+            ? NetworkImage(user.profileImage)
+            : AssetImage("assets/default_avatar.png") as ImageProvider,
       ),
-    ],
-  );
-}
+      title: Text(user.userName),
+      subtitle: Text(user.email),
+      trailing: ElevatedButton(
+        onPressed: () async {
+          await _firestore.collection('users').doc(widget.userId).update({
+            'following': FieldValue.arrayUnion([user.uid])
+          });
 
+          setState(() {
+            recommendedUsers.removeWhere((u) => u.uid == user.uid);
+          });
+        },
+        child: Text("Follow"),
+      ),
+    );
+  }
 }

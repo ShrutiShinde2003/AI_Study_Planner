@@ -32,60 +32,88 @@ class TaskCard extends StatelessWidget {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    bool isCompleted = taskData["isCompleted"] ?? false;
-    String taskName = taskData['taskName'] ?? "No Task Name";
-    String dueDate = taskData['dueDate'] ?? 'No Due Date';
-    String subject = taskData['subject'] ?? 'No Subject';
-    String description = taskData['description'] ?? 'No Description';
 
-    return Card(
-      margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: ListTile(
-        contentPadding: EdgeInsets.all(10),
-        leading: GestureDetector(
+ @override
+Widget build(BuildContext context) {
+  bool isCompleted = taskData["isCompleted"] ?? false;
+  String taskName = taskData['taskName'] ?? "No Task Name";
+  String dueDate = taskData['dueDate'] ?? 'No Due Date';
+  String subject = taskData['subject'] ?? 'No Subject';
+  String description = taskData['description'] ?? 'No Description';
+
+  return Container(
+    margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black12,
+          blurRadius: 4,
+          offset: Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
           onTap: () => _toggleTaskCompletion(taskId, isCompleted),
-          child: Icon(
-            isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: isCompleted ? Colors.green : Colors.grey,
-            size: 28,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Icon(
+              isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: isCompleted ? Colors.green : Colors.grey,
+              size: 24,
+            ),
           ),
         ),
-        title: Text(
-          taskName,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            decoration: isCompleted ? TextDecoration.lineThrough : null,
-            fontSize: 16,
+        SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                taskName,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  decoration: isCompleted ? TextDecoration.lineThrough : null,
+                  color: isCompleted ? Colors.grey : Colors.black87,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                subject,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.indigo,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                "Due: $dueDate",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+              if (description.isNotEmpty)
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.black87,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
           ),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Subject: $subject",
-              style: TextStyle(
-                color: Colors.blueAccent,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              "Due: $dueDate",
-              style: TextStyle(
-                color: Colors.grey[600],
-              ),
-            ),
-            Text(
-              "Description: $description",
-              style: TextStyle(
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 }

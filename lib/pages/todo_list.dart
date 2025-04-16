@@ -11,7 +11,7 @@ import '../services/gamification_service.dart'; // Import Gamification Service
 final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
 class ToDoListPage extends StatefulWidget {
-  ToDoListPage();
+  const ToDoListPage({super.key});
 
   @override
   _ToDoListPageState createState() => _ToDoListPageState();
@@ -160,90 +160,101 @@ class _ToDoListPageState extends State<ToDoListPage> with SingleTickerProviderSt
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("To-Do List"),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: "Past Due"),
-            Tab(text: "Completed"),
-            Tab(text: "Forthcoming"),
-          ],
-        ),
+
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.indigo.shade50,
+    appBar: AppBar(
+      title: Text("To-Do List"),
+      backgroundColor: Colors.indigo.shade50,
+      bottom: TabBar(
+        controller: _tabController,
+        labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        tabs: [
+          Tab(text: "Past Due"),
+          Tab(text: "Completed"),
+          Tab(text: "Forthcoming"),
+        ],
       ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : _subjects.isEmpty
-              ? Center(child: Text("No subjects available. Please add subjects."))
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildTaskList(filterType: "past_due"),
-                    _buildTaskList(filterType: "completed"),
-                    _buildTaskList(filterType: "forthcoming"),
-                  ],
-                ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => NotesPage()));
-        },
-        child: Icon(Icons.add),
-      ),
-    );
-  }
-
-  /// 🔥 Task List Builder
-  Widget _buildTaskList({required String filterType}) {
-    final user = _auth.currentUser;
-    if (user == null) return Center(child: Text("User not authenticated"));
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: _firestore
-          .collection('tasks')
-          .where('uid', isEqualTo: user.uid)
-          .where('subject', whereIn: _subjects.isNotEmpty ? _subjects : ['dummy']) // Fix empty subject case
-          .orderBy('dueDate', descending: false)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return Center(child: Text("No tasks available"));
-
-        DateTime now = DateTime.now();
-        var tasks = snapshot.data!.docs.where((taskDoc) {
-          var data = taskDoc.data() as Map<String, dynamic>;
-          bool isCompleted = data['isCompleted'] ?? false;
-          DateTime? dueDate = (data['dueDate'] as Timestamp?)?.toDate();
-
-          if (filterType == "past_due") return dueDate != null && dueDate.isBefore(now) && !isCompleted;
-          if (filterType == "completed") return isCompleted;
-          if (filterType == "forthcoming") return dueDate != null && dueDate.isAfter(now) && !isCompleted;
-          return false;
-        }).toList();
-
-        if (tasks.isEmpty) return Center(child: Text("No tasks in this category"));
-
-        return ListView.builder(
-          itemCount: tasks.length,
-          itemBuilder: (context, index) {
-            var taskDoc = tasks[index];
-            var taskData = taskDoc.data() as Map<String, dynamic>;
-            DateTime? dueDate = (taskData['dueDate'] as Timestamp?)?.toDate();
-            String formattedDate = dueDate != null ? DateFormat('dd MMM yyyy, hh:mm a').format(dueDate) : 'No Due Date';
-
-            return TaskCard(
-              taskId: taskDoc.id,
-              taskData: {...taskData, 'dueDate': formattedDate},
-              onCompleteTask: () async {
-                await _toggleTaskCompletion(taskDoc.id, taskData['isCompleted'] ?? false);
-                _updateCompletedTasksCount();
-              },
-            );
-          },
-        );
+    ),
+    body: isLoading
+        ? Center(child: CircularProgressIndicator())
+        : _subjects.isEmpty
+            ? Center(child: Text("No subjects available. Please add subjects."))
+            : TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildTaskList(filterType: "past_due"),
+                  _buildTaskList(filterType: "completed"),
+                  _buildTaskList(filterType: "forthcoming"),
+                ],
+              ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => NotesPage()));
       },
-    );
-  }
+      child: Icon(Icons.add),
+    ),
+  );
+}
+
+/// 🔥 Updated Task List Builder with Compact Cards
+Widget _buildTaskList({required String filterType}) {
+  final user = _auth.currentUser;
+  if (user == null) return Center(child: Text("User not authenticated"));
+
+  return StreamBuilder<QuerySnapshot>(
+    stream: _firestore
+        .collection('tasks')
+        .where('uid', isEqualTo: user.uid)
+        .where('subject', whereIn: _subjects.isNotEmpty ? _subjects : ['dummy'])
+        .orderBy('dueDate', descending: false)
+        .snapshots(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting)
+        return Center(child: CircularProgressIndicator());
+
+      if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+        return Center(child: Text("No tasks available"));
+
+      DateTime now = DateTime.now();
+      var tasks = snapshot.data!.docs.where((taskDoc) {
+        var data = taskDoc.data() as Map<String, dynamic>;
+        bool isCompleted = data['isCompleted'] ?? false;
+        DateTime? dueDate = (data['dueDate'] as Timestamp?)?.toDate();
+
+        if (filterType == "past_due") return dueDate != null && dueDate.isBefore(now) && !isCompleted;
+        if (filterType == "completed") return isCompleted;
+        if (filterType == "forthcoming") return dueDate != null && dueDate.isAfter(now) && !isCompleted;
+        return false;
+      }).toList();
+
+      if (tasks.isEmpty) return Center(child: Text("No tasks in this category"));
+
+      return ListView.separated(
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        itemCount: tasks.length,
+        separatorBuilder: (_, __) => SizedBox(height: 6),
+        itemBuilder: (context, index) {
+          var taskDoc = tasks[index];
+          var taskData = taskDoc.data() as Map<String, dynamic>;
+          DateTime? dueDate = (taskData['dueDate'] as Timestamp?)?.toDate();
+          String formattedDate = dueDate != null
+              ? DateFormat('dd MMM yyyy, hh:mm a').format(dueDate)
+              : 'No Due Date';
+
+          return TaskCard(
+            taskId: taskDoc.id,
+            taskData: {...taskData, 'dueDate': formattedDate},
+            onCompleteTask: () async {
+              await _toggleTaskCompletion(taskDoc.id, taskData['isCompleted'] ?? false);
+              _updateCompletedTasksCount();
+            },
+          );
+        },
+      );
+    },
+  );
+}
 }

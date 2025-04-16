@@ -47,81 +47,117 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Group Chats")),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore
-            .collection('groups')
-            .where('members', arrayContains: _auth.currentUser?.uid)
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            print("❌ Firestore Error: ${snapshot.error}");
-            return Center(
-                child: Text("Something went wrong: ${snapshot.error}"));
-          }
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: Text("Group Chats"),
+      backgroundColor: Colors.indigo.shade50,
+      foregroundColor: Colors.black,
+      elevation: 0,
+      centerTitle: false,
+    ),
+    backgroundColor: Colors.indigo.shade50,
+    body: StreamBuilder<QuerySnapshot>(
+      stream: _firestore
+          .collection('groups')
+          .where('members', arrayContains: _auth.currentUser?.uid)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          print("❌ Firestore Error: ${snapshot.error}");
+          return Center(
+              child: Text("Something went wrong: ${snapshot.error}"));
+        }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text("No groups available. Create one!"));
-          }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text("No groups available. Create one!"));
+        }
 
-          var groups = snapshot.data!.docs;
-          return ListView.builder(
-            itemCount: groups.length,
-            itemBuilder: (context, index) {
-              var group = groups[index];
-              String groupId = group.id; // Correctly fetching document ID
-              print("📌 Group Loaded: ${group['name']}"); // Debugging
+        var groups = snapshot.data!.docs;
+        return ListView.builder(
+          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          itemCount: groups.length,
+          itemBuilder: (context, index) {
+            var group = groups[index];
+            String groupId = group.id;
 
-              return ListTile(
-                title: Text(group['name'],
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+            return Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 2,
+              margin: EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                title: Text(
+                  group['name'],
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
                 subtitle: Text("Tap to chat"),
-                trailing: Icon(Icons.arrow_forward_ios),
+                trailing: Icon(Icons.arrow_forward_ios_rounded, size: 18),
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => GroupChatPage(
-                        groupId: groupId, // Correct usage
+                        groupId: groupId,
                         groupName: group['name'],
                       ),
                     ),
                   );
                 },
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text("Create Group"),
-              content: TextField(
-                controller: _groupNameController,
-                decoration: InputDecoration(labelText: "Group Name"),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text("Cancel"),
+            );
+          },
+        );
+      },
+    ),
+    floatingActionButton: FloatingActionButton(
+      backgroundColor: Colors.blueAccent,
+      child: Icon(Icons.add, color: Colors.white),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      onPressed: () {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text("Create Group"),
+            content: TextField(
+              controller: _groupNameController,
+              decoration: InputDecoration(
+                labelText: "Group Name",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                TextButton(onPressed: _createGroup, child: Text("Create")),
-              ],
+              ),
             ),
-          );
-        },
-      ),
-    );
-  }
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: _createGroup,
+                child: Text("Create"),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+}
+
 }
