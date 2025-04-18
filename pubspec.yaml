@@ -48,8 +48,11 @@ dependencies:
   image_picker:
   path_provider:
   firebase_messaging:
+  firebase_storage: 
   timezone: 
   provider:
+  url_launcher:
+  flutter_cached_pdfview:
   #workmanager: 
 
 
