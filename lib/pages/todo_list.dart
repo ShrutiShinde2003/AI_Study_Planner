@@ -164,20 +164,26 @@ class _ToDoListPageState extends State<ToDoListPage> with SingleTickerProviderSt
 @override
 Widget build(BuildContext context) {
   return Scaffold(
-    backgroundColor: Colors.indigo.shade50,
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     appBar: AppBar(
-      title: Text("To-Do List"),
-      backgroundColor: Colors.indigo.shade50,
-      bottom: TabBar(
-        controller: _tabController,
-        labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        tabs: [
-          Tab(text: "Past Due"),
-          Tab(text: "Completed"),
-          Tab(text: "Forthcoming"),
-        ],
-      ),
-    ),
+  title: Text(
+    "To-Do List",
+    style: Theme.of(context).textTheme.titleLarge,
+  ),
+  backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+  bottom: TabBar(
+    controller: _tabController,
+    labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+    labelColor: Theme.of(context).colorScheme.primary,
+    unselectedLabelColor: Theme.of(context).textTheme.bodyMedium?.color,
+    tabs: const [
+      Tab(text: "Past Due"),
+      Tab(text: "Completed"),
+      Tab(text: "Forthcoming"),
+    ],
+  ),
+),
+
     body: isLoading
         ? Center(child: CircularProgressIndicator())
         : _subjects.isEmpty

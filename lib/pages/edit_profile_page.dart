@@ -157,7 +157,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
               content: TextField(
                 controller: passwordController,
                 obscureText: true,
-                decoration: InputDecoration(hintText: "Current Password"),
+                decoration: InputDecoration(
+                  hintText: "Current Password"),
               ),
               actions: [
                 TextButton(
@@ -200,16 +201,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
       );
     }
   }
+
+  
 @override
 Widget build(BuildContext context) {
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+  final isDark = theme.brightness == Brightness.dark;
+
   return Scaffold(
+    backgroundColor: theme.scaffoldBackgroundColor,
     appBar: AppBar(
       title: Text("Edit Profile"),
-      backgroundColor: Colors.white,
       elevation: 1,
-      foregroundColor: Colors.black87,
     ),
-    backgroundColor: Color(0xFFF9F9F9),
     body: SingleChildScrollView(
       padding: EdgeInsets.all(20),
       child: Column(
@@ -246,17 +251,23 @@ Widget build(BuildContext context) {
           _buildTextField("Email", _emailController, TextInputType.emailAddress),
           SizedBox(height: 16),
           _buildTextField("New Password", _passwordController, TextInputType.visiblePassword, obscureText: true),
-
           SizedBox(height: 30),
+
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: saveProfile,
               icon: Icon(Icons.save),
-              label: Text("Save Changes", style: TextStyle(fontWeight: FontWeight.bold)),
+              label: Text(
+                "Save Changes",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.black : Colors.white,
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(vertical: 14),
-                backgroundColor: Colors.white,
+                backgroundColor: isDark ? Colors.grey[300] : theme.primaryColor,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
@@ -267,21 +278,26 @@ Widget build(BuildContext context) {
   );
 }
 
-Widget _buildTextField(String label, TextEditingController controller, TextInputType keyboardType, {bool obscureText = false}) {
+Widget _buildTextField(
+  String label,
+  TextEditingController controller,
+  TextInputType type, {
+  bool obscureText = false,
+}) {
+  final theme = Theme.of(context);
   return TextField(
     controller: controller,
-    keyboardType: keyboardType,
+    keyboardType: type,
     obscureText: obscureText,
     decoration: InputDecoration(
       labelText: label,
       filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.blue),
+      fillColor: theme.colorScheme.surfaceVariant,
+      border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
       ),
     ),
+    style: theme.textTheme.bodyMedium,
   );
 }
 

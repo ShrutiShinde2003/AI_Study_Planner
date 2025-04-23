@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 
 import 'package:study_planner/pages/bottom_navigation.dart';
 import 'package:study_planner/pages/gemini_ai.dart';
@@ -13,9 +14,11 @@ import 'package:study_planner/pages/profile_page.dart';
 import 'package:study_planner/pages/todo_list.dart';
 import 'package:study_planner/pages/dashboard.dart';
 import 'package:study_planner/pages/start_page.dart';
+import 'package:study_planner/services/theme_notifier.dart';
 
 final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin _localNotifications =
+    FlutterLocalNotificationsPlugin();
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("Handling background message: ${message.messageId}");
@@ -25,25 +28,28 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await _setupFirebaseMessaging();
-  await _scheduleDueDateNotifications(); // 🔔 Schedule Task Notifications
-  runApp(MyApp());
+  await _scheduleDueDateNotifications();
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeNotifier(),
+      child: MyApp(),
+    ),
+  );
 }
 
 Future<void> _setupFirebaseMessaging() async {
-  // Request permissions for notifications
   NotificationSettings settings = await _firebaseMessaging.requestPermission();
   print("User granted permission: ${settings.authorizationStatus}");
 
-  // Initialize local notifications
-  const AndroidInitializationSettings androidInitSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-  const InitializationSettings initSettings = InitializationSettings(android: androidInitSettings);
+  const AndroidInitializationSettings androidInitSettings =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+  const InitializationSettings initSettings =
+      InitializationSettings(android: androidInitSettings);
   await _localNotifications.initialize(initSettings);
 
-  // Handle background notifications
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 }
 
-// ✅ Moved _showNotification outside to make it globally accessible
 void _showNotification(String title, String body) {
   _localNotifications.show(
     0,
@@ -60,7 +66,6 @@ void _showNotification(String title, String body) {
   );
 }
 
-// 🔔 Schedule task notifications based on due date
 Future<void> _scheduleDueDateNotifications() async {
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) return;
@@ -80,17 +85,14 @@ Future<void> _scheduleDueDateNotifications() async {
         DateTime now = DateTime.now();
         Duration timeUntilDue = dueDate.difference(now);
 
-        // Notify user 8 hour before the task is due
         if (timeUntilDue.inHours == 8 && timeUntilDue.inMinutes > 0) {
           _showNotification("Upcoming Task", "$taskName is due in 8 hours.");
         }
 
-        // Notify user 5 Hours before the task is due
         if (timeUntilDue.inHours == 5 && timeUntilDue.inMinutes > 0) {
           _showNotification("Reminder", "$taskName is due in 5 hours.");
         }
 
-        // Notify user 1 hour before the task is due
         if (timeUntilDue.inHours == 1 && timeUntilDue.inMinutes > 0) {
           _showNotification("Reminder", "$taskName is due in 1 hour.");
         }
@@ -104,9 +106,29 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: AuthWrapper(), // Handle user authentication
+      title: 'AI Study Planner',
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primarySwatch: Colors.deepPurple,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+        ),
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.deepPurple,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.grey[900],
+          foregroundColor: Colors.white,
+        ),
+      ),
+      themeMode: themeNotifier.themeMode,
+      home: AuthWrapper(),
     );
   }
 }
@@ -127,7 +149,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       RemoteNotification? notification = message.notification;
       if (notification != null) {
-        _showNotification(notification.title ?? "New Message", notification.body ?? "");
+        _showNotification(
+            notification.title ?? "New Message", notification.body ?? "");
       }
     });
   }
@@ -135,13 +158,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(), // Listen for auth state changes
+      stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(body: Center(child: CircularProgressIndicator()));
         }
         if (snapshot.hasData && snapshot.data != null) {
-          String userId = snapshot.data!.uid; // Get logged-in user's ID
+          String userId = snapshot.data!.uid;
           return BottomNavigation(
             homePage: HomePage(),
             todoPage: ToDoListPage(),
@@ -150,7 +173,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
             profilePage: ProfilePage(userId: userId),
           );
         } else {
-          return const WelcomePage(); // Show login page if no user is signed in
+          return const WelcomePage();
         }
       },
     );

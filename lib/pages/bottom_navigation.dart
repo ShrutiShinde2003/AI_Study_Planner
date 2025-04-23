@@ -27,13 +27,13 @@ class BottomNavigation extends StatefulWidget {
 class _BottomNavigationState extends State<BottomNavigation> {
   int _selectedIndex = 0;
   List<String> subjects = [];
+
   @override
   void initState() {
     super.initState();
     fetchSubjects(); // 🔹 Fetch subjects when app starts
   }
 
-  // 🔹 Fetch subjects from Firestore
   void fetchSubjects() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
     DocumentSnapshot userDoc =
@@ -57,55 +57,54 @@ class _BottomNavigationState extends State<BottomNavigation> {
   }
 
   @override
-Widget build(BuildContext context) {
-  final List<Widget> _pages = [
-    widget.homePage,
-    ToDoListPage(),
-    widget.dashboardPage,
-    ChatPage(),
-    widget.GeminiPage,
-    widget.profilePage,
-  ];
+  Widget build(BuildContext context) {
+    final List<Widget> _pages = [
+      widget.homePage,
+      ToDoListPage(),
+      widget.dashboardPage,
+      ChatPage(),
+      widget.GeminiPage,
+      widget.profilePage,
+    ];
 
-  return Scaffold(
-    body: _pages[_selectedIndex],
-    bottomNavigationBar: Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: Offset(0, -2),
-          ),
-        ],
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          type: BottomNavigationBarType.fixed,
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          iconSize: 26,
-          selectedItemColor: Colors.blueAccent,
-          unselectedItemColor: Colors.grey.shade400,
-          backgroundColor: Colors.white,
-          selectedIconTheme: IconThemeData(size: 28),
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.check_circle_rounded), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_rounded), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.smart_toy_rounded), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: ''),
+    return Scaffold(
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: Offset(0, -2),
+            ),
           ],
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          child: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            type: BottomNavigationBarType.fixed,
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            iconSize: 26,
+            selectedItemColor: Theme.of(context).colorScheme.primary,
+            unselectedItemColor: Theme.of(context).unselectedWidgetColor,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            selectedIconTheme: IconThemeData(size: 28),
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: ''),
+              BottomNavigationBarItem(icon: Icon(Icons.check_circle_rounded), label: ''),
+              BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: ''),
+              BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_rounded), label: ''),
+              BottomNavigationBarItem(icon: Icon(Icons.smart_toy_rounded), label: ''),
+              BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: ''),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }

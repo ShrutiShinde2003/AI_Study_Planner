@@ -32,7 +32,8 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
     _geminiApiService = GeminiApiService();
 
     _scrollController.addListener(() {
-      final atBottom = _scrollController.offset >= _scrollController.position.maxScrollExtent - 100;
+      final atBottom = _scrollController.offset >=
+          _scrollController.position.maxScrollExtent - 100;
       if (atBottom && _showScrollToBottomButton) {
         setState(() => _showScrollToBottomButton = false);
       } else if (!atBottom && !_showScrollToBottomButton) {
@@ -80,7 +81,8 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
             title: Text("Pick Image"),
             onTap: () async {
               Navigator.pop(context);
-              final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+              final XFile? image =
+                  await picker.pickImage(source: ImageSource.gallery);
               if (image != null) _askCommand(File(image.path), isImage: true);
             },
           ),
@@ -89,8 +91,10 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
             title: Text("Pick PDF"),
             onTap: () async {
               Navigator.pop(context);
-              FilePickerResult? pdf = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
-              if (pdf != null) _askCommand(File(pdf.files.single.path!), isImage: false);
+              FilePickerResult? pdf = await FilePicker.platform
+                  .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+              if (pdf != null)
+                _askCommand(File(pdf.files.single.path!), isImage: false);
             },
           ),
         ],
@@ -107,15 +111,18 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
         title: Text("Command for ${isImage ? 'Image' : 'PDF'}"),
         content: TextField(
           controller: _promptController,
-          decoration: InputDecoration(hintText: "e.g., Summarize, Generate Flashcards"),
+          decoration:
+              InputDecoration(hintText: "e.g., Summarize, Generate Flashcards"),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
               final command = _promptController.text.trim();
-              if (command.isNotEmpty) await _processFile(file, command, isImage);
+              if (command.isNotEmpty)
+                await _processFile(file, command, isImage);
             },
             child: Text("Submit"),
           ),
@@ -132,12 +139,14 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
     List<Flashcard> flashcards = [];
 
     if (isImage) {
-      response = await _geminiApiService.sendMessageWithOptionalImage(command, imageFile: file);
+      response = await _geminiApiService.sendMessageWithOptionalImage(command,
+          imageFile: file);
     } else {
       if (command.toLowerCase().contains('flashcard')) {
         flashcards = await _geminiApiService.processPDF(file);
       } else {
-        response = await _geminiApiService.sendMessageWithOptionalPdf(command, pdfFile: file);
+        response = await _geminiApiService.sendMessageWithOptionalPdf(command,
+            pdfFile: file);
       }
     }
 
@@ -147,7 +156,8 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
       if (flashcards.isNotEmpty) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => FlashcardViewPage(flashcards: flashcards)),
+          MaterialPageRoute(
+              builder: (context) => FlashcardViewPage(flashcards: flashcards)),
         );
       } else {
         _showSnackBar("Failed to generate flashcards.");
@@ -168,7 +178,11 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
   }
 
   Future<void> _saveMessage(String userId, String text, String sender) async {
-    await _firestore.collection('chats').doc(userId).collection(widget.subject).add({
+    await _firestore
+        .collection('chats')
+        .doc(userId)
+        .collection(widget.subject)
+        .add({
       "sender": sender,
       "text": text,
       "timestamp": FieldValue.serverTimestamp(),
@@ -176,165 +190,175 @@ class _ChatSubjectScreenState extends State<ChatSubjectScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
-Widget build(BuildContext context) {
-  String userId = _auth.currentUser!.uid;
+  Widget build(BuildContext context) {
+    String userId = _auth.currentUser!.uid;
 
-  return Scaffold(
-    appBar: AppBar(
-      title: Text("${widget.subject} Chat"),
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black,
-      elevation: 0.5,
-      centerTitle: true,
-    ),
-    backgroundColor: Color(0xFFF7F7F7),
-    body: Stack(
-      children: [
-        Column(
-          children: [
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: _firestore
-                    .collection('chats')
-                    .doc(userId)
-                    .collection(widget.subject)
-                    .orderBy('timestamp')
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return Center(child: CircularProgressIndicator());
-                  }
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text("${widget.subject} Chat"),
+        elevation: 0.5,
+        centerTitle: true,
+      ),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: _firestore
+                      .collection('chats')
+                      .doc(userId)
+                      .collection(widget.subject)
+                      .orderBy('timestamp')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return Center(child: CircularProgressIndicator());
+                    }
 
-                  final messages = snapshot.data!.docs;
-                  return ListView(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                    children: messages.map((msg) {
-                      final isUser = msg['sender'] == 'user';
-                      return Align(
-                        alignment:
-                            isUser ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-                          margin: EdgeInsets.symmetric(vertical: 4),
-                          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                          decoration: BoxDecoration(
-                            color: isUser ? Colors.blueAccent : Colors.grey.shade300,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                              bottomLeft:
-                                  isUser ? Radius.circular(16) : Radius.circular(0),
-                              bottomRight:
-                                  isUser ? Radius.circular(0) : Radius.circular(16),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 4,
-                                offset: Offset(0, 2),
+                    final messages = snapshot.data!.docs;
+                    return ListView(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 16),
+                      children: messages.map((msg) {
+                        final isUser = msg['sender'] == 'user';
+                        return Align(
+                          alignment: isUser
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 14),
+                            margin: EdgeInsets.symmetric(vertical: 4),
+                            constraints: BoxConstraints(
+                                maxWidth:
+                                    MediaQuery.of(context).size.width * 0.75),
+                            decoration: BoxDecoration(
+                              color: isUser
+                                  ? Colors.blueAccent
+                                  : Colors.grey.shade300,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                                bottomLeft: isUser
+                                    ? Radius.circular(16)
+                                    : Radius.circular(0),
+                                bottomRight: isUser
+                                    ? Radius.circular(0)
+                                    : Radius.circular(16),
                               ),
-                            ],
-                          ),
-                          child: Text(
-                            msg['text'],
-                            style: TextStyle(
-                              color: isUser ? Colors.white : Colors.black87,
-                              fontSize: 15,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
                             ),
+                            child: Text(
+                              msg['text'],
+                              style: TextStyle(
+                                color: isUser ? Colors.white : Colors.black87,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ),
+              if (_isLoading)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: 10),
+                      Text("Processing...", style: TextStyle(fontSize: 15)),
+                    ],
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 16),
+                          hintText: "Ask something...",
+                          filled: true,
+                          fillColor:
+                              Theme.of(context).colorScheme.surfaceVariant,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide.none,
                           ),
                         ),
-                      );
-                    }).toList(),
-                  );
-                },
-              ),
-            ),
-            if (_isLoading)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                     ),
-                    SizedBox(width: 10),
-                    Text("Processing...", style: TextStyle(fontSize: 15)),
+                    SizedBox(width: 8),
+                    IconButton(
+                      icon: Icon(Icons.upload_file, color: Colors.deepPurple),
+                      onPressed: uploadFileAndCommand,
+                    ),
+                    SizedBox(width: 4),
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Colors.blueAccent,
+                      child: IconButton(
+                        icon: Icon(Icons.send, color: Colors.white),
+                        onPressed: () {
+                          final text = _controller.text.trim();
+                          if (text.isNotEmpty) {
+                            sendMessage(text);
+                            _controller.clear();
+                          }
+                        },
+                      ),
+                    ),
                   ],
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 16),
-                        hintText: "Ask something...",
-                        fillColor: Colors.white,
-                        filled: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  IconButton(
-                    icon: Icon(Icons.upload_file, color: Colors.deepPurple),
-                    onPressed: uploadFileAndCommand,
-                  ),
-                  SizedBox(width: 4),
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: Colors.blueAccent,
-                    child: IconButton(
-                      icon: Icon(Icons.send, color: Colors.white),
-                      onPressed: () {
-                        final text = _controller.text.trim();
-                        if (text.isNotEmpty) {
-                          sendMessage(text);
-                          _controller.clear();
-                        }
-                      },
-                    ),
-                  ),
-                ],
+            ],
+          ),
+          if (_showScrollToBottomButton)
+            Positioned(
+              bottom: 90,
+              right: 20,
+              child: FloatingActionButton(
+                mini: true,
+                backgroundColor: Colors.blueAccent,
+                elevation: 4,
+                onPressed: () {
+                  _scrollController.animateTo(
+                    _scrollController.position.maxScrollExtent,
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
+                },
+                child: Icon(Icons.arrow_downward, color: Colors.white),
               ),
             ),
-          ],
-        ),
-        if (_showScrollToBottomButton)
-          Positioned(
-            bottom: 90,
-            right: 20,
-            child: FloatingActionButton(
-              mini: true,
-              backgroundColor: Colors.blueAccent,
-              elevation: 4,
-              onPressed: () {
-                _scrollController.animateTo(
-                  _scrollController.position.maxScrollExtent,
-                  duration: Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-              },
-              child: Icon(Icons.arrow_downward, color: Colors.white),
-            ),
-          ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 }

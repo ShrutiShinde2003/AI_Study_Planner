@@ -79,11 +79,14 @@ class _NotesPageState extends State<NotesPage> {
 
  @override
 Widget build(BuildContext context) {
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+  final isDark = theme.brightness == Brightness.dark;
+
   return Scaffold(
-    backgroundColor: Colors.indigo.shade50,
+    backgroundColor: colorScheme.background,
     appBar: AppBar(
       title: const Text("Add Task"),
-      backgroundColor: Colors.indigo.shade50,
       elevation: 0,
     ),
     body: Padding(
@@ -93,7 +96,7 @@ Widget build(BuildContext context) {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             /// 🔹 Subject Dropdown
-            const Text("Select Subject", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text("Select Subject", style: theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               value: _selectedSubject,
@@ -110,7 +113,7 @@ Widget build(BuildContext context) {
                   .toList(),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: colorScheme.surfaceVariant,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
@@ -118,21 +121,21 @@ Widget build(BuildContext context) {
             const SizedBox(height: 20),
 
             /// 🔹 Task Name
-            const Text("Task Name", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text("Task Name", style: theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             TextField(
               controller: _taskNameController,
               decoration: InputDecoration(
                 hintText: "Enter task title",
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: colorScheme.surfaceVariant,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 20),
 
             /// 🔹 Description
-            const Text("Description", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text("Description", style: theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             TextField(
               controller: _descriptionController,
@@ -140,7 +143,7 @@ Widget build(BuildContext context) {
               decoration: InputDecoration(
                 hintText: "Enter task description",
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: colorScheme.surfaceVariant,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
@@ -149,7 +152,7 @@ Widget build(BuildContext context) {
             /// 🔹 Due Date
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo.shade50,
+                backgroundColor: isDark ? colorScheme.primaryContainer.withOpacity(0.2) : Colors.indigo.shade50,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -170,13 +173,13 @@ Widget build(BuildContext context) {
               child: ElevatedButton(
                 onPressed: _addTask,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo.shade50,
+                  backgroundColor: theme.colorScheme.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text(
                   "Add Task",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
             ),
@@ -186,4 +189,6 @@ Widget build(BuildContext context) {
     ),
   );
 }
+
+
 }

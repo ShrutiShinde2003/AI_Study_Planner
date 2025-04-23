@@ -41,15 +41,19 @@ Widget build(BuildContext context) {
   String subject = taskData['subject'] ?? 'No Subject';
   String description = taskData['description'] ?? 'No Description';
 
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+  final isDarkMode = theme.brightness == Brightness.dark;
+
   return Container(
     margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: isDarkMode ? Colors.grey[850] : colorScheme.surface,
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
         BoxShadow(
-          color: Colors.black12,
+          color: theme.shadowColor.withOpacity(0.1),
           blurRadius: 4,
           offset: Offset(0, 2),
         ),
@@ -64,7 +68,7 @@ Widget build(BuildContext context) {
             padding: const EdgeInsets.only(top: 4),
             child: Icon(
               isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-              color: isCompleted ? Colors.green : Colors.grey,
+              color: isCompleted ? Colors.green : theme.unselectedWidgetColor,
               size: 24,
             ),
           ),
@@ -76,35 +80,31 @@ Widget build(BuildContext context) {
             children: [
               Text(
                 taskName,
-                style: TextStyle(
+                style: theme.textTheme.bodyLarge!.copyWith(
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
                   decoration: isCompleted ? TextDecoration.lineThrough : null,
-                  color: isCompleted ? Colors.grey : Colors.black87,
+                  color: isCompleted ? theme.disabledColor : colorScheme.onSurface,
                 ),
               ),
               SizedBox(height: 4),
               Text(
                 subject,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.indigo,
+                style: theme.textTheme.bodyMedium!.copyWith(
                   fontWeight: FontWeight.w500,
+                  color: colorScheme.primary,
                 ),
               ),
               Text(
                 "Due: $dueDate",
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+                style: theme.textTheme.bodySmall!.copyWith(
+                  color: theme.hintColor,
                 ),
               ),
               if (description.isNotEmpty)
                 Text(
                   description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.black87,
+                  style: theme.textTheme.bodySmall!.copyWith(
+                    color: colorScheme.onSurface,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -116,4 +116,5 @@ Widget build(BuildContext context) {
     ),
   );
 }
+
 }

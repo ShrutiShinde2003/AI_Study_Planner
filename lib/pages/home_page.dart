@@ -92,12 +92,13 @@ Widget build(BuildContext context) {
   double progress = (completedTasks % 5) / 5.0;
 
   return Scaffold(
-    backgroundColor: Colors.indigo.shade50,
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     appBar: AppBar(
-      title: Text("Home"),
-      backgroundColor: Colors.indigo.shade50,
-      automaticallyImplyLeading: false,
-    ),
+  title: Text("Home", style: Theme.of(context).textTheme.titleLarge),
+  backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+  automaticallyImplyLeading: false,
+),
+
     body: SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

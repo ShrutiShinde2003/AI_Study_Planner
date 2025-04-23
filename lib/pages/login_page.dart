@@ -92,17 +92,18 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.indigo.shade200, // background color
-      body: SafeArea(
-        child: Center(
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.indigo.shade200,
+    body: SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 50),
 
-              // Welcome back
               const Text(
                 'Welcome back, you\'ve been missed',
                 style: TextStyle(
@@ -114,125 +115,66 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 20),
 
-              /// Email Textfield
-              SizedBox(
-                width: 370,
-                child: TextField(
-                  controller: emailController,
-                  obscureText: false,
-                  decoration: InputDecoration(
-                    hintText: 'Email',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: BorderSide.none, // Default border
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: const BorderSide(
-                        color: Colors.white, // Border color for enabled state
-                        width: 1, // Border width
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: const BorderSide(
-                        color: Colors.indigo, // Border color for focused state
-                        width: 1, // Border width
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                      horizontal: 15,
-                    ), // Padding inside the text field
-                  ),
-                ),
+              /// Email
+              TextField(
+                controller: emailController,
+                obscureText: false,
+                decoration: _buildInputDecoration('Email'),
+              ),
+              const SizedBox(height: 10),
+
+              /// Password
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: _buildInputDecoration('Password'),
               ),
 
               const SizedBox(height: 10),
 
-              /// Password textfield
-              SizedBox(
-                width: 370,
-                child: TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    hintText: 'Password',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: BorderSide.none, // Default border
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: const BorderSide(
-                        color: Colors.white, // Border color for enabled state
-                        width: 1, // Border width
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Corner radius
-                      borderSide: const BorderSide(
-                        color: Colors.indigo, // Border color for focused state
-                        width: 1, // Border width
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                      horizontal: 15,
-                    ), // Padding inside the text field
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ForgotPasswordPage(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Forgot Password',
-                        style: TextStyle(
-                          color: Colors.indigo,
-                          fontWeight: FontWeight.bold,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ForgotPasswordPage(),
                         ),
+                      );
+                    },
+                    child: const Text(
+                      'Forgot Password',
+                      style: TextStyle(
+                        color: Colors.indigo,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
 
-              // Sign in button
-              MyButton(
-                text: 'Sign in',
-                onTap: signUserIn,
+              /// Sign in Button - full width
+              SizedBox(
+                width: double.infinity,
+                child: MyButton(
+                  text: 'Sign in',
+                  onTap: signUserIn,
+                ),
               ),
 
               const SizedBox(height: 50),
 
-              // Not a member? Register here
+              /// Register
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     'Not a member?',
-                    style: TextStyle(color: Colors.indigo),
+                    style: TextStyle(color: Colors.indigo.shade100),
                   ),
                   const SizedBox(width: 4),
                   GestureDetector(
@@ -251,6 +193,29 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+InputDecoration _buildInputDecoration(String hint) {
+  return InputDecoration(
+    hintText: hint,
+    filled: true,
+    fillColor: Colors.white,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Colors.white),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Colors.indigo),
+    ),
+    contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+  );
+}
+
 }

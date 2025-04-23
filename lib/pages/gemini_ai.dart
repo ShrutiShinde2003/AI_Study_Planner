@@ -32,13 +32,14 @@ class _ChatScreenState extends State<ChatScreen> {
       });
     }
   }
+
+  
 @override
 Widget build(BuildContext context) {
   return Scaffold(
-    backgroundColor: Colors.indigo.shade50,
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     appBar: AppBar(
       title: Text("Subject Chats"),
-      backgroundColor: Colors.indigo.shade50,
     ),
     body: subjects.isEmpty
         ? Center(

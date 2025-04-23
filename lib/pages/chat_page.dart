@@ -49,14 +49,12 @@ class _ChatPageState extends State<ChatPage> {
   @override
 Widget build(BuildContext context) {
   return Scaffold(
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     appBar: AppBar(
       title: Text("Group Chats"),
-      backgroundColor: Colors.indigo.shade50,
-      foregroundColor: Colors.black,
       elevation: 0,
       centerTitle: false,
     ),
-    backgroundColor: Colors.indigo.shade50,
     body: StreamBuilder<QuerySnapshot>(
       stream: _firestore
           .collection('groups')

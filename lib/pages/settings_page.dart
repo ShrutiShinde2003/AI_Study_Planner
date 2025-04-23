@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'login_page.dart';
 import 'edit_profile_page.dart';
 import 'subjects_page.dart';
+import 'start_page.dart';
 
 class SettingsPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -19,22 +20,26 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  void _deleteAccount(BuildContext context) async {
-    User? user = _auth.currentUser;
-    if (user == null) return;
+  Future<void> _deleteAccount(BuildContext context) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
 
-    await _firestore.collection('users').doc(user.uid).delete();
-    await user.delete();
-    
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+      if (user != null) {
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
+        await user.delete();
+      }
 
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-      (route) => false,
-    );
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => WelcomePage()),
+        (route) => false,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ Failed to delete account: $e')),
+      );
+    }
   }
+
 
   void _showDeleteDialog(BuildContext context) {
     showDialog(
@@ -50,7 +55,7 @@ class SettingsPage extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _deleteAccount(context);
+              _deleteAccount(context); // 👈 call from here
             },
             child: Text("Delete", style: TextStyle(color: Colors.red)),
           ),
@@ -59,6 +64,7 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(

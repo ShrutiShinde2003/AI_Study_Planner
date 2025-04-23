@@ -11,8 +11,8 @@ import 'followers_page.dart';
 import 'following_page.dart';
 import '../services/gamification_service.dart';
 import '../models/user_model.dart';
-import '../main.dart'; // 🔥 For themeNotifier
-
+import '../main.dart';
+import 'package:study_planner/services/theme_notifier.dart';
 
 class ProfilePage extends StatefulWidget {
   final String userId;
@@ -39,17 +39,25 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> fetchUserData() async {
-    if (widget.userId.isEmpty) return;
+    final uid = widget.userId.isNotEmpty
+        ? widget.userId
+        : (_auth.currentUser?.uid ?? '');
 
-    DocumentSnapshot userDoc =
-        await _firestore.collection('users').doc(widget.userId).get();
+    if (uid.trim().isEmpty) return;
 
-    if (userDoc.exists) {
-      setState(() {
-        user = UserModel.fromDocumentSnapshot(userDoc);
-        isCurrentUser = widget.userId == _auth.currentUser?.uid;
-      });
-      fetchRecommendedUsers();
+    try {
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(uid).get();
+
+      if (userDoc.exists) {
+        setState(() {
+          user = UserModel.fromDocumentSnapshot(userDoc);
+          isCurrentUser = uid == _auth.currentUser?.uid;
+        });
+        fetchRecommendedUsers();
+      }
+    } catch (e) {
+      debugPrint('Error fetching user data: $e');
     }
   }
 
@@ -80,13 +88,28 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.indigo.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text("Profile"),
-        backgroundColor: Colors.indigo.shade50,
         elevation: 0,
         actions: isCurrentUser
             ? [
+                Consumer<ThemeNotifier>(
+                  builder: (context, themeNotifier, child) {
+                    final isDark = themeNotifier.themeMode == ThemeMode.dark;
+                    return IconButton(
+                      icon: Icon(
+                        isDark ? Icons.nightlight_round : Icons.wb_sunny,
+                        color: isDark ? Colors.amber : Colors.orange,
+                      ),
+                      onPressed: () {
+                        themeNotifier.setThemeMode(
+                          isDark ? ThemeMode.light : ThemeMode.dark,
+                        );
+                      },
+                    );
+                  },
+                ),
                 IconButton(
                   icon: Icon(Icons.settings, color: Colors.black),
                   onPressed: () {
@@ -129,7 +152,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-
   Widget _buildProfileHeader() {
     return Column(
       children: [
@@ -145,7 +167,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildProfileImage() {
     return StreamBuilder<DocumentSnapshot>(
-      stream: _firestore.collection('users').doc(widget.userId).snapshots(),
+      stream: _firestore
+          .collection('users')
+          .doc(widget.userId.isNotEmpty
+              ? widget.userId
+              : _auth.currentUser?.uid ?? 'INVALID')
+          .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data == null) {
           return CircleAvatar(
@@ -239,15 +266,18 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         _progressCircle("XP", user!.xp, xpProgress, Colors.blue),
         _progressCircle("🔥 Streak", user!.streak, 1.0, Colors.orange),
-        _progressCircle("🎯 Tasks", user!.taskProgress, milestoneProgress, Colors.green),
+        _progressCircle(
+            "🎯 Tasks", user!.taskProgress, milestoneProgress, Colors.green),
       ],
     );
   }
 
-  Widget _progressCircle(String title, int value, double progress, Color color) {
+  Widget _progressCircle(
+      String title, int value, double progress, Color color) {
     return Column(
       children: [
-        Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(title,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         SizedBox(height: 10),
         Stack(
           alignment: Alignment.center,
@@ -299,7 +329,11 @@ class _ProfilePageState extends State<ProfilePage> {
       subtitle: Text(user.email),
       trailing: ElevatedButton(
         onPressed: () async {
-          await _firestore.collection('users').doc(widget.userId).update({
+          final uid =
+              widget.userId.isNotEmpty ? widget.userId : _auth.currentUser?.uid;
+          if (uid == null || uid.isEmpty) return;
+
+          await _firestore.collection('users').doc(uid).update({
             'following': FieldValue.arrayUnion([user.uid])
           });
 

@@ -121,94 +121,103 @@ class _GroupChatPageState extends State<GroupChatPage> {
   }
 
   Future<void> _pickAndUploadNote() async {
-  final result = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: ['pdf', 'docx', 'jpg', 'png'],
-  );
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'docx', 'jpg', 'png'],
+    );
 
-  if (result != null && result.files.single.path != null) {
-    File file = File(result.files.single.path!);
-    String fileName =
-        '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+    if (result != null && result.files.single.path != null) {
+      File file = File(result.files.single.path!);
+      String fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
 
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Uploading note to Cloudinary...')),
-      );
-
-      const cloudName = 'dusywpaom';
-      const uploadPreset = 'flutter_uploads';
-
-      // ✅ Use RAW upload URL
-      final uploadUrl =
-          Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/raw/upload');
-
-      print("🚀 Uploading to: $uploadUrl");
-      print("📁 File path: ${file.path}");
-      print("📎 File name: $fileName");
-
-      var request = http.MultipartRequest('POST', uploadUrl)
-        ..fields['upload_preset'] = uploadPreset
-        ..files.add(await http.MultipartFile.fromPath('file', file.path));
-
-      var response = await request.send();
-
-      final res = await http.Response.fromStream(response);
-      print("📨 Raw response: ${res.body}");
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        String fileUrl = data['secure_url'];
-
-        print("📦 Original Cloudinary URL: $fileUrl");
-
-        // Fix just in case
-        fileUrl = fileUrl.replaceFirst('/image/upload/', '/raw/upload/');
-        print("🔧 Final Cloudinary URL used: $fileUrl");
-
-        await _groupService.sendNoteMessage(
-          widget.groupId,
-          fileName,
-          fileUrl,
-        );
-
+      try {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Note uploaded successfully!')),
+          const SnackBar(content: Text('Uploading note to Cloudinary...')),
         );
-      } else {
-        throw Exception("Cloudinary upload failed: ${res.body}");
+
+        const cloudName = 'dusywpaom';
+        const uploadPreset = 'flutter_uploads';
+
+        // ✅ Use RAW upload URL
+        final uploadUrl =
+            Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/raw/upload');
+
+        print("🚀 Uploading to: $uploadUrl");
+        print("📁 File path: ${file.path}");
+        print("📎 File name: $fileName");
+
+        var request = http.MultipartRequest('POST', uploadUrl)
+          ..fields['upload_preset'] = uploadPreset
+          ..files.add(await http.MultipartFile.fromPath('file', file.path));
+
+        var response = await request.send();
+
+        final res = await http.Response.fromStream(response);
+        print("📨 Raw response: ${res.body}");
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(res.body);
+          String fileUrl = data['secure_url'];
+
+          print("📦 Original Cloudinary URL: $fileUrl");
+
+          // Fix just in case
+          fileUrl = fileUrl.replaceFirst('/image/upload/', '/raw/upload/');
+          print("🔧 Final Cloudinary URL used: $fileUrl");
+
+          await _groupService.sendNoteMessage(
+            widget.groupId,
+            fileName,
+            fileUrl,
+          );
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Note uploaded successfully!')),
+          );
+        } else {
+          throw Exception("Cloudinary upload failed: ${res.body}");
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Upload failed: $e')),
+        );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload failed: $e')),
-      );
     }
   }
-}
-
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: Text(widget.groupName),
-        actions: [
-          IconButton(
-              icon: const Icon(Icons.people),
-              tooltip: "View Members",
-              onPressed: _showGroupMembers),
-          IconButton(
-              icon: const Icon(Icons.person_add),
-              tooltip: "Add Member",
-              onPressed: _addMemberByUsername),
-          IconButton(
-              icon: const Icon(Icons.exit_to_app),
-              tooltip: 'Leave Group',
-              onPressed: _confirmLeaveGroup),
-        ],
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    appBar: AppBar(
+      title: Text(widget.groupName),
+      actions: [
+        IconButton(
+            icon: const Icon(Icons.people),
+            tooltip: "View Members",
+            onPressed: _showGroupMembers),
+        IconButton(
+            icon: const Icon(Icons.person_add),
+            tooltip: "Add Member",
+            onPressed: _addMemberByUsername),
+        IconButton(
+            icon: const Icon(Icons.exit_to_app),
+            tooltip: 'Leave Group',
+            onPressed: _confirmLeaveGroup),
+      ],
+    ),
+    body: Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: Theme.of(context).brightness == Brightness.dark
+              ? [Color(0xFF1A1A1A), Color.fromARGB(255, 41, 41, 41)]
+              : [Color(0xFFF2F2F2), Color(0xFFFFFFFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-      body: Column(
+      child: Column(
         children: [
           Expanded(
             child: StreamBuilder<List<Message>>(
@@ -217,9 +226,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
                 if (snapshot.connectionState == ConnectionState.waiting)
                   return const Center(child: CircularProgressIndicator());
                 if (snapshot.hasError)
-                  return const Center(child: Text("Something went wrong. Please try again."));
+                  return const Center(
+                      child: Text("Something went wrong. Please try again."));
                 if (!snapshot.hasData || snapshot.data!.isEmpty)
-                  return const Center(child: Text("No messages yet. Start chatting!"));
+                  return const Center(
+                      child: Text("No messages yet. Start chatting!"));
 
                 final messages = snapshot.data!;
                 return ListView.builder(
@@ -230,13 +241,18 @@ class _GroupChatPageState extends State<GroupChatPage> {
                     final isMe = message.senderId == _auth.currentUser?.uid;
 
                     return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment: isMe
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
                       child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 5, horizontal: 10),
                         padding: const EdgeInsets.all(12),
-                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                        constraints: BoxConstraints(
+                            maxWidth:
+                                MediaQuery.of(context).size.width * 0.75),
                         decoration: BoxDecoration(
-                          color: isMe ? Colors.indigo[200] : Colors.grey[300],
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(12),
                             topRight: const Radius.circular(12),
@@ -245,16 +261,24 @@ class _GroupChatPageState extends State<GroupChatPage> {
                           ),
                         ),
                         child: Column(
-                          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                          crossAxisAlignment: isMe
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
                           children: [
                             Text(message.senderName,
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[700])),
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[700])),
                             const SizedBox(height: 4),
-                            if (message.type == 'note' && message.fileUrl != null)
+                            if (message.type == 'note' &&
+                                message.fileUrl != null)
                               Builder(builder: (context) {
                                 final url = message.fileUrl!;
-                                final fileName = message.fileName ?? 'View Note';
-                                final isImage = url.endsWith('.jpg') || url.endsWith('.png');
+                                final fileName =
+                                    message.fileName ?? 'View Note';
+                                final isImage = url.endsWith('.jpg') ||
+                                    url.endsWith('.png');
                                 final isPdf = url.endsWith('.pdf');
 
                                 if (isImage) {
@@ -263,13 +287,17 @@ class _GroupChatPageState extends State<GroupChatPage> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => FullImageView(url: url),
+                                          builder: (_) =>
+                                              FullImageView(url: url),
                                         ),
                                       );
                                     },
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
-                                      child: Image.network(url, fit: BoxFit.cover, width: 180, height: 200),
+                                      child: Image.network(url,
+                                          fit: BoxFit.cover,
+                                          width: 180,
+                                          height: 200),
                                     ),
                                   );
                                 } else if (isPdf) {
@@ -287,7 +315,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
                                     },
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.picture_as_pdf, color: Colors.red),
+                                        const Icon(Icons.picture_as_pdf,
+                                            color: Colors.red),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
@@ -306,17 +335,23 @@ class _GroupChatPageState extends State<GroupChatPage> {
                                     onTap: () async {
                                       final uri = Uri.parse(url);
                                       if (await canLaunchUrl(uri)) {
-                                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                        await launchUrl(uri,
+                                            mode:
+                                                LaunchMode.externalApplication);
                                       } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text("Could not launch the file.")),
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  "Could not launch the file.")),
                                         );
                                       }
                                     },
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.insert_drive_file, size: 20, color: Colors.grey),
+                                        const Icon(Icons.insert_drive_file,
+                                            size: 20, color: Colors.grey),
                                         const SizedBox(width: 8),
                                         Flexible(
                                           child: Text(
@@ -324,7 +359,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
                                             overflow: TextOverflow.ellipsis,
                                             maxLines: 1,
                                             style: const TextStyle(
-                                              decoration: TextDecoration.underline,
+                                              decoration:
+                                                  TextDecoration.underline,
                                               color: Colors.blueAccent,
                                               fontSize: 15,
                                             ),
@@ -336,7 +372,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
                                 }
                               })
                             else
-                              Text(message.text, style: const TextStyle(fontSize: 15)),
+                              Text(message.text,
+                                  style: const TextStyle(fontSize: 15)),
                           ],
                         ),
                       ),
@@ -351,7 +388,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  IconButton(icon: const Icon(Icons.attach_file), onPressed: _pickAndUploadNote),
+                  IconButton(
+                    icon: const Icon(Icons.attach_file),
+                    onPressed: _pickAndUploadNote,
+                  ),
                   Expanded(
                     child: TextField(
                       controller: _messageController,
@@ -359,8 +399,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
                       decoration: InputDecoration(
                         hintText: "Type a message...",
                         filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        fillColor: Theme.of(context).cardColor,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(25),
                           borderSide: BorderSide.none,
@@ -372,9 +413,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
                   const SizedBox(width: 8),
                   FloatingActionButton(
                     mini: true,
-                    backgroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     onPressed: _sendMessage,
-                    child: const Icon(Icons.send, size: 20),
+                    child:
+                        const Icon(Icons.send, size: 20, color: Colors.white),
                   ),
                 ],
               ),
@@ -382,8 +424,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class PDFViewerPage extends StatelessWidget {
@@ -447,8 +490,6 @@ class PDFViewerPage extends StatelessWidget {
     );
   }
 }
-
-
 
 class FullImageView extends StatelessWidget {
   final String url;

@@ -105,6 +105,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(title: Text("Subjects")),
       body: Padding(
         padding: EdgeInsets.all(16),
