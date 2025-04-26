@@ -25,6 +25,8 @@ class _ProfilePageState extends State<ProfilePage> {
   final GamificationService _gamificationService = GamificationService();
 
   UserModel? user;
+  bool isCurrentUser = false;
+  List<UserModel> recommendedUsers = [];
 
   @override
   void initState() {
@@ -33,17 +35,40 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> fetchUserData() async {
-    String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    if (userId.isEmpty) return;
+    if (widget.userId.isEmpty) return;
 
     DocumentSnapshot userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+        await _firestore.collection('users').doc(widget.userId).get();
 
     if (userDoc.exists) {
       setState(() {
         user = UserModel.fromDocumentSnapshot(userDoc);
+        isCurrentUser = widget.userId == _auth.currentUser?.uid;
       });
+      fetchRecommendedUsers();
     }
+  }
+
+  /// **🔹 Fetch Recommended Users Based on Common Subjects**
+  Future<void> fetchRecommendedUsers() async {
+    if (user == null || user!.subjects.isEmpty) return;
+
+    QuerySnapshot querySnapshot = await _firestore.collection('users').get();
+
+    List<UserModel> allUsers = querySnapshot.docs
+        .map((doc) => UserModel.fromDocumentSnapshot(doc))
+        .where((u) => u.uid != user!.uid) // Exclude current user
+        .where((u) =>
+            !user!.following.contains(u.uid)) // Exclude already followed users
+        .toList();
+
+    List<UserModel> filteredUsers = allUsers.where((u) {
+      return u.subjects.any((subject) => user!.subjects.contains(subject));
+    }).toList();
+
+    setState(() {
+      recommendedUsers = filteredUsers.take(5).toList();
+    });
   }
 
   Future<void> refreshProfile() async {
@@ -53,21 +78,22 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200], // Light background for contrast
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Profile"),
-        backgroundColor: Colors.blueAccent,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.settings, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SettingsPage()),
-              );
-            },
-          ),
-        ],
+        title: Text(isCurrentUser ? "My Profile" : "Profile"),
+        actions: isCurrentUser
+            ? [
+                IconButton(
+                  icon: Icon(Icons.settings, color: Colors.black),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SettingsPage()),
+                    );
+                  },
+                ),
+              ]
+            : null,
       ),
       body: RefreshIndicator(
         onRefresh: refreshProfile,
@@ -82,9 +108,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 SizedBox(height: 20),
                 _buildFollowSection(),
                 SizedBox(height: 20),
-                _buildAddFriendsButton(),
+                isCurrentUser ? _buildAddFriendsButton() : Container(),
                 SizedBox(height: 30),
-                _buildGamificationProgress(), // ✅ Progress Circles in a Row
+                _buildGamificationProgress(),
+                SizedBox(height: 30),
+                _buildRecommendations(), // 🔹 Added Profile Recommendations Section
               ],
             ),
           ),
@@ -93,7 +121,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  /// **Profile Header with Image & Info**
   Widget _buildProfileHeader() {
     return Column(
       children: [
@@ -107,13 +134,35 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  /// **Profile Image Section**
+  Widget _buildUserCard(UserModel user) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundImage: user.profileImage.isNotEmpty
+            ? NetworkImage(user.profileImage)
+            : AssetImage("assets/default_avatar.png") as ImageProvider,
+      ),
+      title: Text(user.userName),
+      subtitle: Text(user.email),
+      trailing: ElevatedButton(
+        onPressed: () async {
+          // Add user to the following list in Firestore
+          await _firestore.collection('users').doc(widget.userId).update({
+            'following': FieldValue.arrayUnion([user.uid])
+          });
+
+          // Remove the user from the recommended list
+          setState(() {
+            recommendedUsers.removeWhere((u) => u.uid == user.uid);
+          });
+        },
+        child: Text("Follow"),
+      ),
+    );
+  }
+
   Widget _buildProfileImage() {
     return StreamBuilder<DocumentSnapshot>(
-      stream: _firestore
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser!.uid)
-          .snapshots(),
+      stream: _firestore.collection('users').doc(widget.userId).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data == null) {
           return CircleAvatar(
@@ -142,7 +191,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  /// **Followers & Following Section**
   Widget _buildFollowSection() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -150,14 +198,16 @@ class _ProfilePageState extends State<ProfilePage> {
         _followStat("Followers", user?.followers.length ?? 0, () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => FollowersPage()),
+            MaterialPageRoute(
+                builder: (context) => FollowersPage(userId: widget.userId)),
           );
         }),
         SizedBox(width: 40),
         _followStat("Following", user?.following.length ?? 0, () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => FollowingPage()),
+            MaterialPageRoute(
+                builder: (context) => FollowingPage(userId: widget.userId)),
           );
         }),
       ],
@@ -177,7 +227,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  /// **Styled "Add Friends" Button**
   Widget _buildAddFriendsButton() {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
@@ -196,7 +245,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  /// **Gamification Progress Section (Circles in a Row)**
   Widget _buildGamificationProgress() {
     if (user == null) return CircularProgressIndicator();
 
@@ -214,7 +262,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  /// **Circular Progress Indicators Without Boxes**
+  /// **✅ Merged `_progressCircle` Method**
   Widget _progressCircle(
       String title, int value, double progress, Color color) {
     return Column(
@@ -238,6 +286,26 @@ class _ProfilePageState extends State<ProfilePage> {
             Text("$value",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ],
+        ),
+      ],
+    );
+  }
+
+  /// **✅ Merged `_buildRecommendations` Method**
+  Widget _buildRecommendations() {
+    if (recommendedUsers.isEmpty) return SizedBox();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("People You May Know",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        SizedBox(height: 10),
+        Column(
+          children: recommendedUsers
+              .map<Widget>(
+                  (user) => _buildUserCard(user)) // Explicitly specify `Widget`
+              .toList(),
         ),
       ],
     );

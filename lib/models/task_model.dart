@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ Import Firestore
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 
 class Task {
   final String id;
@@ -16,7 +16,7 @@ class Task {
   });
 
   // 🔹 Convert Firestore Document to `Task`
-  factory Task.fromFirestore(DocumentSnapshot doc) { // ✅ Now recognized
+  factory Task.fromFirestore(DocumentSnapshot doc) { // Now recognized
     Map data = doc.data() as Map<String, dynamic>;
     return Task(
       id: doc.id,

@@ -24,7 +24,7 @@ class GeminiApiService {
     );
   }
 
-  /// ✅ Text message & Optional Image for Q&A or Flashcard if asked
+  /// Text message & Optional Image for Q&A or Flashcard if asked
   Future<String> sendMessageWithOptionalImage(String userInput,
       {File? imageFile}) async {
     final chat = _model.startChat();
@@ -37,10 +37,10 @@ class GeminiApiService {
     }
 
     final response = await chat.sendMessage(Content('user', parts));
-    return response.text ?? "No response from AI.";
+    return response.text?.replaceAll('*', '').trim() ?? "No response from AI.";
   }
 
-  /// ✅ Message & PDF Text for Summary/QA/Flashcard
+  /// Message & PDF Text for Summary/QA/Flashcard
   Future<String> sendMessageWithOptionalPdf(String userInput,
       {required File pdfFile}) async {
     final extractedText = await _extractTextFromPDF(pdfFile);
@@ -52,10 +52,10 @@ class GeminiApiService {
       ]),
     );
 
-    return response.text ?? "No response from AI.";
+    return response.text?.replaceAll('*', '').trim() ?? "No response from AI.";
   }
 
-  /// ✅ Extract Text from PDF
+  /// Extract Text from PDF
   Future<String> _extractTextFromPDF(File file) async {
     final bytes = await file.readAsBytes();
     final document = PdfDocument(inputBytes: bytes);
@@ -69,12 +69,12 @@ class GeminiApiService {
     document.dispose();
     return buffer
         .toString()
-        .replaceAll('*', '')
-        .replaceAll(RegExp(r'\n\s*\n'), '\n')
+        .replaceAll('', '')
+        .replaceAll(RegExp(r'\n\s\n'), '\n')
         .trim();
   }
 
-  /// ✅ Process PDF for Flashcards (When explicitly asked)
+  /// Process PDF for Flashcards (When explicitly asked)
   Future<List<Flashcard>> processPDF(File file) async {
     final extractedText = await _extractTextFromPDF(file);
 
@@ -107,7 +107,7 @@ class GeminiApiService {
           ];
   }
 
-  /// ✅ Extract Flashcards for Image or PDF (Based on AI response)
+  /// Extract Flashcards for Image or PDF (Based on AI response)
   List<Flashcard> extractFlashcards(String responseText) {
     final List<Flashcard> flashcards = [];
     final lines = responseText
@@ -136,7 +136,7 @@ class GeminiApiService {
       }
     }
 
-    // ✅ Add the last flashcard if present
+    // Add the last flashcard if present
     if (question != null && answer != null) {
       flashcards.add(Flashcard(question: question, answer: answer));
     }
@@ -144,14 +144,14 @@ class GeminiApiService {
     return flashcards;
   }
 
-  /// ✅ General Purpose Analyzer: Check if Flashcard Generation Command
+  /// General Purpose Analyzer: Check if Flashcard Generation Command
   bool isFlashcardCommand(String command) {
     final lowerCommand = command.toLowerCase();
     return lowerCommand.contains("flashcard") ||
         lowerCommand.contains("generate flashcards");
   }
 
-  /// ✅ General Purpose Analyzer: Check if Summary Command
+  /// General Purpose Analyzer: Check if Summary Command
   bool isSummaryCommand(String command) {
     final lowerCommand = command.toLowerCase();
     return lowerCommand.contains("summarize") ||

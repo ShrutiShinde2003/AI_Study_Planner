@@ -27,8 +27,13 @@ dependencies:
   syncfusion_flutter_pdf: 
   image_picker:
   path_provider:
-  mime:
   firebase_messaging:
+  timezone: 
+  mime:
+  url_launcher:
+  amplify_flutter:
+  amplify_storage_s3:
+  #workmanager: 
 
 
 

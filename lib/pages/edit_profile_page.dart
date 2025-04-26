@@ -74,7 +74,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  /// 🔹 Set Local Avatar
+  /// Set Local Avatar
   void _setLocalAvatar(String imagePath) async {
     String userId = _auth.currentUser?.uid ?? '';
     if (userId.isEmpty) return;
@@ -89,7 +89,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     Navigator.pop(context);
   }
 
-  /// 🔹 Pick Image from Gallery
+  /// Pick Image from Gallery
   Future<void> _pickImageFromGallery() async {
     Navigator.pop(context);
     final picker = ImagePicker();
@@ -101,7 +101,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  /// 🔹 Save Image in Local Storage and SharedPreferences
+  /// Save Image in Local Storage and SharedPreferences
   Future<void> _saveImageLocally(File imageFile) async {
     String userId = _auth.currentUser?.uid ?? '';
     if (userId.isEmpty) return;
@@ -126,7 +126,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     print(" Saved Image for $userId: $imagePath");
   }
 
-  /// 🔹 Update Profile Image in Firestore
+  /// Update Profile Image in Firestore
   void _updateProfileImage(String imagePath) async {
     String userId = _auth.currentUser?.uid ?? '';
     if (userId.isEmpty) return;

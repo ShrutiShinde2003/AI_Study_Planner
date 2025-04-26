@@ -20,7 +20,7 @@ class Message {
     return Message(
       id: documentId,
       senderId: data['senderId'] as String? ?? '',
-      senderName: data['senderName'] as String? ?? '', // ✅ Fixed field name
+      senderName: data['senderName'] as String? ?? '', // Fixed field name
       text: data['text'] as String? ?? '',
       timestamp: data['timestamp'] as Timestamp? ?? Timestamp.now(),
     );
@@ -30,7 +30,7 @@ class Message {
   Map<String, dynamic> toMap() {
     return {
       'senderId': senderId,
-      'senderName': senderName, // ✅ Corrected field name
+      'senderName': senderName, // Corrected field name
       'text': text,
       'timestamp': timestamp,
     };

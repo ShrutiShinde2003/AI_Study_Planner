@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class TaskCard extends StatelessWidget {
   final String taskId;
   final Map<String, dynamic> taskData;
   final VoidCallback? onCompleteTask;
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
   TaskCard({
     required this.taskId,
@@ -20,6 +22,10 @@ class TaskCard extends StatelessWidget {
         'completedAt': !currentStatus ? FieldValue.serverTimestamp() : null,
       });
 
+      if (!currentStatus) {
+        _firebaseMessaging.subscribeToTopic("task_completed_$taskId");
+      }
+
       if (onCompleteTask != null) onCompleteTask!();
     } catch (error) {
       print("❌ Error updating task: $error");
@@ -31,7 +37,8 @@ class TaskCard extends StatelessWidget {
     bool isCompleted = taskData["isCompleted"] ?? false;
     String taskName = taskData['taskName'] ?? "No Task Name";
     String dueDate = taskData['dueDate'] ?? 'No Due Date';
-    String subject = taskData['subject'] ?? 'No Subject'; // ✅ Changed from subjectName to subject
+    String subject = taskData['subject'] ?? 'No Subject';
+    String description = taskData['description'] ?? 'No Description';
 
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -58,7 +65,7 @@ class TaskCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Subject: $subject", // ✅ Now correctly retrieves "subject"
+              "Subject: $subject",
               style: TextStyle(
                 color: Colors.blueAccent,
                 fontWeight: FontWeight.w500,
@@ -68,6 +75,12 @@ class TaskCard extends StatelessWidget {
               "Due: $dueDate",
               style: TextStyle(
                 color: Colors.grey[600],
+              ),
+            ),
+            Text(
+              "Description: $description",
+              style: TextStyle(
+                color: Colors.black87,
               ),
             ),
           ],

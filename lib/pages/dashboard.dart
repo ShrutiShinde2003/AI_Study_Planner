@@ -11,12 +11,12 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  List<String> userSubjects = []; //  Stores the user's subjects
+  List<String> userSubjects = []; // Stores the user's subjects
 
   @override
   void initState() {
     super.initState();
-    fetchUserSubjects(); //  Fetch subjects when Dashboard loads
+    fetchUserSubjects(); // Fetch subjects when Dashboard loads
   }
 
   // 🔹 Fetch user's subjects from Firestore
@@ -37,13 +37,13 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Dashboard'),
-        automaticallyImplyLeading: false, // 🚀 Removes the back button
+        automaticallyImplyLeading: false, // Removes the back button
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
             .collection('tasks')
             .where('uid', isEqualTo: _auth.currentUser?.uid)
-            .where('isCompleted', isEqualTo: true) //  Fetch only completed tasks
+            .where('isCompleted', isEqualTo: true) // Fetch only completed tasks
             .snapshots(), //  Real-time updates
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -65,7 +65,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ? data['subject']
                 : 'No Subject'; // 🔹 Prevents "Unknown"
 
-            //  Only show tasks from subjects that still exist in the profile
+            // Only show tasks from subjects that still exist in the profile
             if (userSubjects.contains(subject)) {
               completedTasks[subject] = (completedTasks[subject] ?? 0) + 1;
             }
@@ -87,7 +87,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       : Column(
                           children: [
                             SizedBox(
-                              height: 200, //  Fixed height for Pie Chart
+                              height: 200, // Fixed height for Pie Chart
                               child: PieChart(
                                 PieChartData(
                                   sections: _getChartSections(completedTasks),
@@ -101,7 +101,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             // 🔹 List of Subjects with Task Count
                             ListView.builder(
                               shrinkWrap: true, //  Prevents layout issues
-                              physics: NeverScrollableScrollPhysics(), // Fixes nested scrolling
+                              physics: NeverScrollableScrollPhysics(), //  Fixes nested scrolling
                               itemCount: completedTasks.length,
                               itemBuilder: (context, index) {
                                 String subject = completedTasks.keys.elementAt(index);
@@ -162,10 +162,11 @@ class _DashboardPageState extends State<DashboardPage> {
   // 🔹 Assign Unique Colors to Subjects
   Color _getColorForSubject(String subject) {
     const colors = [
-      Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple,
-      Colors.teal, Colors.pink, Colors.yellow, Colors.cyan, Colors.indigo,
+      Colors.blue, Colors.red, Color.fromARGB(255, 65, 221, 70), Colors.orange, Colors.purple,
+      Colors.teal, Color.fromARGB(255, 179, 22, 74), Colors.cyan, Colors.indigo,
       Colors.lime, Colors.brown,
     ];
     return colors[subject.hashCode % colors.length]; // Generates consistent color
-  }
+  
+}
 }
