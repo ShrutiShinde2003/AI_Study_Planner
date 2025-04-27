@@ -2,18 +2,19 @@ plugins {
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
+    id "org.jetbrains.kotlin.android" version "2.1.0" apply false // added this line 
     id "com.google.gms.google-services"
 }
 
 android {
     namespace = "com.example.ai_study_planner"
-    compileSdk = 34 // Specify the compile SDK version
-    ndkVersion = "23.1.7779620"  // Use your Flutter NDK version
+    compileSdk = 35 // Specify the compile SDK version
+    ndkVersion = "28.0.13004108"  // Use your Flutter NDK version
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
+    }          
 
     kotlinOptions {
         jvmTarget = "17"  // Ensure compatibility with Java 17
@@ -25,6 +26,8 @@ android {
         targetSdk = 33  // Target latest SDK
         versionCode = 1
         versionName = "1.0"
+
+        multiDexEnabled true // ✅ Added MultiDex here
     }
 
     buildTypes {
@@ -39,7 +42,7 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
     
     // Firebase BoM
     implementation platform('com.google.firebase:firebase-bom:33.5.1')
@@ -47,6 +50,9 @@ dependencies {
     // Firebase dependencies
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-auth'
+
+    // ✅ Added MultiDex dependency
+    implementation 'androidx.multidex:multidex:2.0.1'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
