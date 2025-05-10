@@ -1,91 +1,181 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// Ensure you have this model
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+
+import 'package:study_planner/pages/bottom_navigation.dart';
+import 'package:study_planner/pages/gemini_ai.dart';
 import 'package:study_planner/pages/home_page.dart';
 import 'package:study_planner/pages/login_page.dart';
-import 'package:study_planner/services/pigeon_user_details.dart'; // Ensure you have the LoginPage
+import 'package:study_planner/pages/profile_page.dart';
+import 'package:study_planner/pages/todo_list.dart';
+import 'package:study_planner/pages/dashboard.dart';
+import 'package:study_planner/pages/start_page.dart';
+import 'package:study_planner/services/theme_notifier.dart';
+
+final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+final FlutterLocalNotificationsPlugin _localNotifications =
+    FlutterLocalNotificationsPlugin();
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print("Handling background message: ${message.messageId}");
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const MyApp());
+  await _setupFirebaseMessaging();
+  await _scheduleDueDateNotifications();
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeNotifier(),
+      child: MyApp(),
+    ),
+  );
+}
+
+Future<void> _setupFirebaseMessaging() async {
+  NotificationSettings settings = await _firebaseMessaging.requestPermission();
+  print("User granted permission: ${settings.authorizationStatus}");
+
+  const AndroidInitializationSettings androidInitSettings =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+  const InitializationSettings initSettings =
+      InitializationSettings(android: androidInitSettings);
+  await _localNotifications.initialize(initSettings);
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+}
+
+void _showNotification(String title, String body) {
+  _localNotifications.show(
+    0,
+    title,
+    body,
+    NotificationDetails(
+      android: AndroidNotificationDetails(
+        'channel_id',
+        'Task Reminders',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+    ),
+  );
+}
+
+Future<void> _scheduleDueDateNotifications() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  FirebaseFirestore.instance
+      .collection('tasks')
+      .where('uid', isEqualTo: user.uid)
+      .where('isCompleted', isEqualTo: false)
+      .snapshots()
+      .listen((snapshot) async {
+    for (var taskDoc in snapshot.docs) {
+      var taskData = taskDoc.data();
+      DateTime? dueDate = (taskData['dueDate'] as Timestamp?)?.toDate();
+      String taskName = taskData['taskName'] ?? "Task";
+
+      if (dueDate != null) {
+        DateTime now = DateTime.now();
+        Duration timeUntilDue = dueDate.difference(now);
+
+        if (timeUntilDue.inHours == 8 && timeUntilDue.inMinutes > 0) {
+          _showNotification("Upcoming Task", "$taskName is due in 8 hours.");
+        }
+
+        if (timeUntilDue.inHours == 5 && timeUntilDue.inMinutes > 0) {
+          _showNotification("Reminder", "$taskName is due in 5 hours.");
+        }
+
+        if (timeUntilDue.inHours == 1 && timeUntilDue.inMinutes > 0) {
+          _showNotification("Reminder", "$taskName is due in 1 hour.");
+        }
+      }
+    }
+  });
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'AI Study Planner',
       theme: ThemeData(
-        primarySwatch: Colors.teal,
+        brightness: Brightness.light,
+        primarySwatch: Colors.deepPurple,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+        ),
       ),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.active) {
-            // Check if user is logged in
-            User? user = snapshot.data;
-            if (user != null) {
-              // If user is logged in, show HomePage
-              return HomePage(
-                userDetails: PigeonUserDetails(
-                  uid: user.uid,
-                  email: user.email,
-                ), // Pass user details
-              );
-            } else {
-              // If user is not logged in, show LoginPage
-              return const LoginPage();
-            }
-          } else {
-            // While waiting for the connection to be established
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.deepPurple,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.grey[900],
+          foregroundColor: Colors.white,
+        ),
       ),
+      themeMode: themeNotifier.themeMode,
+      home: AuthWrapper(),
     );
   }
 }
 
-// class HomePage extends StatelessWidget {
-//   final PigeonUserDetails? userDetails; // Make userDetails nullable
+class AuthWrapper extends StatefulWidget {
+  @override
+  _AuthWrapperState createState() => _AuthWrapperState();
+}
 
-//   const HomePage({super.key, this.userDetails});
+class _AuthWrapperState extends State<AuthWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    _setupForegroundNotificationListener();
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text('Home Page'),
-//         actions: [
-//           IconButton(
-//             icon: const Icon(Icons.logout),
-//             onPressed: () async {
-//               await FirebaseAuth.instance.signOut(); // Sign out from Firebase
-//               Navigator.pushReplacementNamed(context, '/login');
-//             },
-//           ),
-//         ],
-//       ),
-//       body: Center(
-//         child: Text(
-//           userDetails != null
-//               ? 'Welcome, ${userDetails!.userName}!'
-//               : 'Welcome to your Study Planner!', // Default message if userDetails is null
-//         ),
-//       ),
-//     );
-//   }
-// }
+  void _setupForegroundNotificationListener() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      RemoteNotification? notification = message.notification;
+      if (notification != null) {
+        _showNotification(
+            notification.title ?? "New Message", notification.body ?? "");
+      }
+    });
+  }
 
-// Ensure you have the PigeonUserDetails model properly defined
-// The userName extension can be integrated into the model directly, ensure your model has a userName property.
-// class PigeonUserDetails {
-//   final String userName;
-
-//   PigeonUserDetails({required this.userName});
-// }
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        if (snapshot.hasData && snapshot.data != null) {
+          String userId = snapshot.data!.uid;
+          return BottomNavigation(
+            homePage: HomePage(),
+            todoPage: ToDoListPage(),
+            dashboardPage: DashboardPage(),
+            GeminiPage: ChatScreen(),
+            profilePage: ProfilePage(userId: userId),
+          );
+        } else {
+          return const WelcomePage();
+        }
+      },
+    );
+  }
+}
